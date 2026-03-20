@@ -1,5 +1,7 @@
 # OpenClaw Voice Control
 
+[中文说明](README.zh-CN.md)
+
 `OpenClaw Voice Control` is a local macOS voice-control companion for OpenClaw.
 
 Current scope:
