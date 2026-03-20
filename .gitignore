@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+
+# Local secrets
+.env
+.env.*
+.env.local
+.env.*.local
+!.env.example
+
+# Runtime artifacts
+logs/
+runtime/
+*.log
+*.pid
+*.tmp
+
+# macOS
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
+
+# Project-specific large or local-only assets
+models/
+tmp/
+dist/
+build/
+*.wav
+*.zip
+
+# Keep public wakeword folder metadata, but not proprietary binaries by default
+assets/wakeword/*.ppn
+assets/wakeword/*.pv

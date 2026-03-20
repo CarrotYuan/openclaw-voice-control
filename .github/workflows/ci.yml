@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install package
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Verify Python sources compile
+        run: python -m compileall src/openclaw_voice_control
+
+      - name: Verify shell scripts parse
+        run: |
+          bash -n scripts/deploy_macos.sh
+          bash -n scripts/uninstall_macos.sh
+          bash -n scripts/restart_service.sh
+          bash -n scripts/start_service.sh
+          bash -n scripts/start_overlay.sh
+          bash -n scripts/install_macos.sh
+          bash -n scripts/doctor.sh
