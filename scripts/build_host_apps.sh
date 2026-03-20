@@ -10,6 +10,7 @@ build_host_app() {
   local bundle_id="$2"
   local launch_script="$3"
   local usage_description="$4"
+  local app_mode="$5"
   local app_dir="$RUNTIME_DIR/$app_name.app"
   local contents_dir="$app_dir/Contents"
   local macos_dir="$contents_dir/MacOS"
@@ -39,8 +40,7 @@ build_host_app() {
   <string>1.0</string>
   <key>CFBundleVersion</key>
   <string>1</string>
-  <key>LSBackgroundOnly</key>
-  <true/>
+  $app_mode
   <key>NSMicrophoneUsageDescription</key>
   <string>$usage_description</string>
 </dict>
@@ -64,12 +64,16 @@ build_host_app \
   "OpenClawVoiceControlServiceHost" \
   "ai.openclaw.voice-control.host" \
   "scripts/start_service.sh" \
-  "OpenClaw Voice Control needs microphone access for wakeword detection and speech capture."
+  "OpenClaw Voice Control needs microphone access for wakeword detection and speech capture." \
+  "<key>LSBackgroundOnly</key>
+  <true/>"
 
 build_host_app \
   "OpenClawVoiceControlOverlayHost" \
   "ai.openclaw.overlay.host" \
   "scripts/start_overlay.sh" \
-  "OpenClaw Voice Control needs microphone access while showing status overlays during voice control."
+  "OpenClaw Voice Control needs microphone access while showing status overlays during voice control." \
+  "<key>LSUIElement</key>
+  <true/>"
 
 echo "Built host apps in $RUNTIME_DIR"

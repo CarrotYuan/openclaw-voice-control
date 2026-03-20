@@ -1,5 +1,6 @@
 #import <Foundation/Foundation.h>
-#import <signal.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 #ifndef OPENCLAW_PROJECT_DIR
 #define OPENCLAW_PROJECT_DIR ""
@@ -17,20 +18,8 @@
 #define OPENCLAW_HOST_APP_PATH ""
 #endif
 
-static NSTask *gTask = nil;
-
-static void forward_signal(int signo) {
-  if (gTask != nil && gTask.isRunning) {
-    kill(gTask.processIdentifier, signo);
-  }
-}
-
 int main(int argc, const char * argv[]) {
   @autoreleasepool {
-    signal(SIGTERM, forward_signal);
-    signal(SIGINT, forward_signal);
-    signal(SIGHUP, forward_signal);
-
     NSString *projectDir = @OPENCLAW_PROJECT_DIR;
     NSString *targetScript = @OPENCLAW_TARGET_SCRIPT;
     NSString *hostBundleId = @OPENCLAW_HOST_BUNDLE_ID;
@@ -41,30 +30,19 @@ int main(int argc, const char * argv[]) {
       return 64;
     }
 
-    NSMutableDictionary<NSString *, NSString *> *env =
-        [NSMutableDictionary dictionaryWithDictionary:[[NSProcessInfo processInfo] environment]];
-    env[@"OPENCLAW_HOST_BUNDLE_ID"] = hostBundleId;
-    env[@"OPENCLAW_HOST_APP_PATH"] = hostAppPath;
-
-    NSTask *task = [[NSTask alloc] init];
-    gTask = task;
-    task.executableURL = [NSURL fileURLWithPath:@"/bin/bash"];
-    task.arguments = @[targetScript];
-    task.currentDirectoryURL = [NSURL fileURLWithPath:projectDir isDirectory:YES];
-    task.environment = env;
-    task.standardInput = [NSFileHandle fileHandleWithStandardInput];
-    task.standardOutput = [NSFileHandle fileHandleWithStandardOutput];
-    task.standardError = [NSFileHandle fileHandleWithStandardError];
-
-    NSError *error = nil;
-    if (![task launchAndReturnError:&error]) {
-      fprintf(stderr, "Failed to launch child script: %s\n", error.localizedDescription.UTF8String);
+    if (setenv("OPENCLAW_HOST_BUNDLE_ID", hostBundleId.UTF8String, 1) != 0 ||
+        setenv("OPENCLAW_HOST_APP_PATH", hostAppPath.UTF8String, 1) != 0) {
+      fprintf(stderr, "Failed to set launcher environment.\n");
       return 70;
     }
 
-    [task waitUntilExit];
-    int status = task.terminationStatus;
-    gTask = nil;
-    return status;
+    if (chdir(projectDir.fileSystemRepresentation) != 0) {
+      perror("Failed to change directory");
+      return 72;
+    }
+
+    execl(targetScript.fileSystemRepresentation, targetScript.fileSystemRepresentation, (char *)NULL);
+    perror("Failed to exec target script");
+    return 71;
   }
 }

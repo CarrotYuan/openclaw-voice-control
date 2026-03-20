@@ -20,7 +20,9 @@ if sys.platform == "darwin":
         import objc
         from AppKit import (
             NSApp,
+            NSApplication,
             NSApplicationActivationPolicyAccessory,
+            NSRunningApplication,
             NSScreenSaverWindowLevel,
             NSStatusWindowLevel,
             NSWindowCollectionBehaviorCanJoinAllApplications,
@@ -30,7 +32,9 @@ if sys.platform == "darwin":
     except ImportError:
         objc = None
         NSApp = None
+        NSApplication = None
         NSApplicationActivationPolicyAccessory = None
+        NSRunningApplication = None
         NSScreenSaverWindowLevel = None
         NSStatusWindowLevel = None
         NSWindowCollectionBehaviorCanJoinAllApplications = 0
@@ -39,7 +43,9 @@ if sys.platform == "darwin":
 else:
     objc = None
     NSApp = None
+    NSApplication = None
     NSApplicationActivationPolicyAccessory = None
+    NSRunningApplication = None
     NSScreenSaverWindowLevel = None
     NSStatusWindowLevel = None
     NSWindowCollectionBehaviorCanJoinAllApplications = 0
@@ -79,10 +85,18 @@ TITLE_MAP = {
 
 
 def activate_accessory_app() -> None:
-    if sys.platform != "darwin" or NSApp is None or objc is None:
+    if sys.platform != "darwin" or objc is None:
         return
     try:
-        NSApp.setActivationPolicy_(NSApplicationActivationPolicyAccessory)
+        app = NSApp
+        if app is None and NSApplication is not None:
+            app = NSApplication.sharedApplication()
+        if NSRunningApplication is not None:
+            current_app = NSRunningApplication.currentApplication()
+            if current_app is not None:
+                current_app.setActivationPolicy_(NSApplicationActivationPolicyAccessory)
+        if app is not None:
+            app.setActivationPolicy_(NSApplicationActivationPolicyAccessory)
     except Exception:
         pass
 
@@ -823,13 +837,17 @@ def main() -> None:
     state = OverlayStateManager(config.overlay)
     state.ensure_idle_state(reset=True)
 
+    activate_accessory_app()
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
     activate_accessory_app()
+    QTimer.singleShot(0, activate_accessory_app)
+    QTimer.singleShot(250, activate_accessory_app)
 
     window = OverlayWindow(state, config.overlay.poll_interval_ms)
     window.show()
     window.hide()
+    QTimer.singleShot(500, activate_accessory_app)
     sys.exit(app.exec())
 
 

@@ -121,6 +121,31 @@ This is only an example. The repository does not ship that file.
 - `SENSEVOICE_VAD_MODEL_PATH`
   Point this at a local VAD model directory.
 
+## Agent Safety Reminder
+
+This repository provides a local voice entrypoint. It does not bind wakeword
+activation to one specific person.
+
+That means:
+
+- anyone near the microphone can potentially trigger the assistant
+- any tool, permission, or account reachable through the connected OpenClaw
+  agent should be treated as reachable through voice
+
+Recommended practice:
+
+- add explicit safety constraints to the prompt or core instructions of the
+  agent connected to this voice layer
+- require confirmation for high-risk actions such as deletion, payments,
+  external publishing, credential changes, or machine-control operations
+- avoid giving the voice-facing agent broad autonomous control over sensitive
+  tools, accounts, or destructive actions
+- use least privilege when deciding which tools and permissions the connected
+  agent can access
+
+Treat the voice entrypoint as a shared trigger surface and design the target
+agent prompt and permissions accordingly.
+
 ## Full Setup Flow
 
 ### 1. Clone the repository
@@ -355,6 +380,22 @@ After deployment:
 - say the wakeword again
 - verify wakeword, reply, and overlay behavior without relying on the foreground terminal process
 
+Important timing note:
+
+Do not assume background startup failed if wakeword does not react immediately
+after deploy. Real-machine validation showed that a cold background start can
+spend noticeable time in:
+
+- `Loading ASR model...`
+- `Initializing wakeword engine...`
+
+Wait until logs reach:
+
+- `Wakeword engine ready`
+- `Entered idle listening loop`
+
+before concluding that resident startup failed.
+
 ### 15. Validate auto-start
 
 After background deploy works:
@@ -384,6 +425,24 @@ Uninstall:
 Finder:
 
 - [uninstall_macos.command](scripts/uninstall_macos.command)
+
+Important uninstall note:
+
+`uninstall_macos.sh` now removes more than LaunchAgent plist files. It also
+attempts to clean up:
+
+- LaunchAgent registrations
+- generated host-app executables under `runtime/host_apps`
+- matching host-app processes
+- matching foreground Python test processes
+
+This matters because manual foreground tests can otherwise remain alive and make
+it look like uninstall only removed the overlay while the voice service is still
+running.
+
+It also matters because repeated validation showed that a foreground test
+process can survive in parallel with the LaunchAgent-managed background service
+and confuse later deployment or uninstall checks.
 
 ## Important Configuration Locations
 
@@ -668,6 +727,37 @@ Validated result:
 - reply works
 - background resident behavior works
 - auto-start works
+
+### Background startup can be misread as failure if checked too early
+
+Observed:
+
+- after deploy, the service can still be loading ASR or initializing the
+  wakeword engine
+- this can look like "background did not stay resident" even though startup is
+  still in progress
+
+Resolution:
+
+- check logs and wait for:
+  - `Wakeword engine ready`
+  - `Entered idle listening loop`
+
+### Uninstall used to leave behind manual test processes
+
+Observed:
+
+- foreground Python test runs could survive uninstall
+- generated host-app binaries could also remain in place
+- this made it look like uninstall had failed even when LaunchAgents were gone
+
+Resolution:
+
+- `uninstall_macos.sh` now removes:
+  - LaunchAgent registrations
+  - generated host apps under `runtime/host_apps`
+  - matching host-app processes
+  - matching foreground Python test processes
 
 ## Important Current Limits
 

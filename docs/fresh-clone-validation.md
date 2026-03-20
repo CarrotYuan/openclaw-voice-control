@@ -261,6 +261,56 @@ Status:
 
 - fixed in architecture and validated locally
 
+### 8. Background startup could be misread as failure when checked too early
+
+Observed behavior:
+
+- after deploy, the service could stay in:
+  - `Loading ASR model...`
+  - `Initializing wakeword engine...`
+- this could make a real background startup look like a failed resident start if
+  checked too early
+
+Root cause:
+
+- cold startup still needs time to load ASR and initialize the wakeword engine
+
+Resolution:
+
+- wait for logs to reach:
+  - `Wakeword engine ready`
+  - `Entered idle listening loop`
+- treat those log lines as the real background-ready checkpoint
+
+Status:
+
+- documented
+
+### 9. Uninstall originally left behind manual test processes
+
+Observed behavior:
+
+- foreground Python test runs could survive after uninstall
+- generated host-app executables could also remain in `runtime/host_apps`
+- this made it look like uninstall had failed even when LaunchAgents were gone
+
+Root cause:
+
+- removing plist files alone is not enough when validation also includes manual
+  foreground test runs
+
+Resolution:
+
+- `uninstall_macos.sh` now removes:
+  - LaunchAgent registrations
+  - generated host apps under `runtime/host_apps`
+  - matching host-app processes
+  - matching foreground Python test processes
+
+Status:
+
+- fixed and documented
+
 ## Current Recommended Validation Order
 
 For a new machine or a new local clone, validate in this order:

@@ -140,6 +140,13 @@ machine-specific troubleshooting knobs:
 - `VOICE_CONTROL_PYTHON_BIN`
 - `VOICE_CONTROL_OVERLAY_PYTHON_BIN`
 
+Do not assume background startup failed if it does not react immediately after
+deploy. A cold start can still be loading ASR and initializing the wakeword
+engine. The practical ready checkpoint is when logs reach:
+
+- `Wakeword engine ready`
+- `Entered idle listening loop`
+
 ## launchd Install
 
 After the direct run works, install the LaunchAgent:
@@ -156,6 +163,14 @@ This command also builds the host launcher apps before install.
 ```bash
 ./scripts/uninstall_macos.sh
 ```
+
+The uninstall script is expected to remove more than LaunchAgent plist files. It
+also cleans up:
+
+- LaunchAgent registrations
+- generated host apps under `runtime/host_apps`
+- matching host-app processes
+- matching foreground Python test processes
 
 ## Preflight Check
 
