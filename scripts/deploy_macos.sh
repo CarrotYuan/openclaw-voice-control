@@ -9,6 +9,9 @@ SERVICE_SRC="$PROJECT_DIR/launchagents/$SERVICE_LABEL.plist"
 OVERLAY_SRC="$PROJECT_DIR/launchagents/$OVERLAY_LABEL.plist"
 SERVICE_DST="$LAUNCH_AGENTS_DIR/$SERVICE_LABEL.plist"
 OVERLAY_DST="$LAUNCH_AGENTS_DIR/$OVERLAY_LABEL.plist"
+HOST_APPS_DIR="$PROJECT_DIR/runtime/host_apps"
+SERVICE_HOST_EXEC="$HOST_APPS_DIR/OpenClawVoiceControlServiceHost.app/Contents/MacOS/OpenClawVoiceControlServiceHost"
+OVERLAY_HOST_EXEC="$HOST_APPS_DIR/OpenClawVoiceControlOverlayHost.app/Contents/MacOS/OpenClawVoiceControlOverlayHost"
 
 mkdir -p "$LAUNCH_AGENTS_DIR" "$PROJECT_DIR/logs" "$PROJECT_DIR/runtime"
 
@@ -21,6 +24,19 @@ fi
 if [ ! -x "$PROJECT_DIR/scripts/start_service.sh" ] || [ ! -x "$PROJECT_DIR/scripts/start_overlay.sh" ]; then
   echo "Expected executable scripts are missing or not executable."
   echo "Run: chmod +x scripts/*.sh"
+  exit 1
+fi
+
+if [ ! -x "$PROJECT_DIR/scripts/build_host_apps.sh" ]; then
+  echo "Expected host app builder is missing or not executable."
+  echo "Run: chmod +x scripts/build_host_apps.sh"
+  exit 1
+fi
+
+bash "$PROJECT_DIR/scripts/build_host_apps.sh"
+
+if [ ! -x "$SERVICE_HOST_EXEC" ] || [ ! -x "$OVERLAY_HOST_EXEC" ]; then
+  echo "Failed to build host app executables."
   exit 1
 fi
 

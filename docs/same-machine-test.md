@@ -1,6 +1,7 @@
 # Same-Machine Isolation Test
 
-This document describes how to validate the public repository on the same Mac without relying on the old private runtime.
+This document describes how to validate the public repository on the same Mac while
+still treating the repository as a self-contained environment.
 
 ## Goal
 
@@ -10,11 +11,12 @@ Verify that the public repository can run from its own files, paths, scripts, an
 
 This is a strong validation step, but not a perfect clean-room install.
 
-Because the test still runs on the same machine, some things may already exist:
+Because the test still runs on the same machine, some things outside the
+repository may already exist:
 
 - microphone permissions
 - OpenClaw itself
-- cached model files
+- downloaded model files
 - local wakeword assets
 
 There is one more practical limit that matters for voice testing:
@@ -25,27 +27,33 @@ For example, the service can boot, load ASR, initialize the wakeword engine, and
 
 That means "service starts" and "service can hear speech" are separate checks.
 
+Fresh-clone validation added one more important lesson:
+
+- background success on macOS must be tested through the real repository deployment
+  path, not only through a foreground terminal run
+- the current recommended background path is the host-app launcher built by
+  `./scripts/deploy_macos.sh`
+
 ## Recommended Procedure
 
-1. Stop the old private voice-control service.
-2. Stop the old private overlay service.
-3. Confirm the old LaunchAgents are no longer active.
-4. Open a normal macOS Terminal session as your logged-in user.
-5. Work only inside the public repository directory.
-6. Create a fresh `.env` from `.env.example`.
-7. Run `./scripts/doctor.sh`.
-8. Run `./scripts/list_audio_devices.py` or `./.venv/bin/python scripts/list_audio_devices.py` and confirm real input devices are visible.
-9. Run the public service directly.
-10. Run the public overlay directly if needed.
-11. If direct runs work, test `./scripts/deploy_macos.sh`.
-12. After validation, test `./scripts/uninstall_macos.sh`.
+1. Stop any other voice service that may still be using the microphone.
+2. Confirm any previous LaunchAgents are no longer active.
+3. Open a normal macOS Terminal session as your logged-in user.
+4. Work only inside the public repository directory.
+5. Create a fresh `.env` from `.env.example`.
+6. Run `./scripts/doctor.sh`.
+7. Run `./scripts/list_audio_devices.py` or `./.venv/bin/python scripts/list_audio_devices.py` and confirm real input devices are visible.
+8. Run the public service directly.
+9. Run the public overlay directly if needed.
+10. If direct runs work, test `./scripts/deploy_macos.sh`.
+11. After validation, test `./scripts/uninstall_macos.sh`.
 
 ## What Counts As Success
 
 - the service starts from the public repository
 - the terminal session can see a real input device instead of only `NULL Capture Device`
 - the overlay reads the public repository runtime state file
-- no script falls back to the old private directory
+- no script depends on an unrelated local project directory
 - launchd labels come from the public repository templates
 - the service reacts to an actual wakeword spoken in that local session
 
@@ -86,6 +94,11 @@ The most common causes are:
 - missing `.env`
 - missing dependency installation
 - wakeword asset path not available yet
+- `.ppn` placeholder mistaken for a real bundled repository asset
+- VAD model not actually prepared under `models/fsmn-vad`
 - FunASR or Porcupine packages not installed
-- an old private service is still running and masking the issue
+- editable install blocked by PyPI SSL verification issues
+- another voice service is still running and masking the issue
 - the current terminal or execution context cannot see microphone devices even though macOS itself has them
+- the user is still testing the older bare-Python background path instead of the
+  current host-app deployment path

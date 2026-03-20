@@ -27,22 +27,45 @@ cp .env.example .env
 python3 -m openclaw_voice_control --config config/default.yaml --env-file .env
 ```
 
+If editable install fails on your machine because of PyPI SSL verification, retry with:
+
+```bash
+./.venv/bin/pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org -e .
+```
+
 ## ASR Model Recommendation
 
 For a more stable setup, prefer local model paths over first-run online model resolution.
 
-If you already have local ModelScope cache directories, point the config to them:
+For a clean new-environment setup, prepare explicit local model directories:
 
-- `asr.model_path`
-- `asr.vad_model_path`
+- `models/SenseVoiceSmall`
+- `models/fsmn-vad`
 
-This reduces the chance of first-run failures caused by online model registration or download issues.
+Then point the config or `.env` at those directories.
 
-For wakeword, prefer an explicit absolute `.ppn` file path:
+For wakeword, prefer a repository-local path or another explicit local path:
 
-- `WAKEWORD_FILE=/absolute/path/to/your.ppn`
+- `WAKEWORD_FILE=assets/wakeword/your-model.ppn`
+- or `WAKEWORD_FILE=/absolute/path/to/your-model.ppn`
 
-If `WAKEWORD_FILE` is not set, the config file should still point to a valid `.ppn` path instead of an empty placeholder.
+The repository does not include a real `.ppn` file. You must provide your own local
+wakeword asset.
+
+For VAD, remember that the config alias `fsmn-vad` is a FunASR alias, not a direct
+ModelScope repository id. Fresh-clone validation found that a direct command such
+as `modelscope download --model fsmn-vad` is not enough.
+
+If you need to populate `models/fsmn-vad`, use FunASR resolution first:
+
+```bash
+./.venv/bin/python - <<'PY'
+from funasr import AutoModel
+AutoModel(model='fsmn-vad', disable_update=True)
+PY
+```
+
+Then copy the resolved model into `models/fsmn-vad`.
 
 ## Audio Device Diagnostics
 
@@ -60,69 +83,62 @@ Then test microphone capture directly:
 
 If needed, set `audio.input_device_index` in `config/default.yaml`.
 
-## Why A Private Local Build Can Work While Another Test Context Fails
+## Why A New Environment Can Still Fail Even When Startup Looks Healthy
 
-During validation, the public repository was able to reach the idle listening stage, but some restricted execution contexts still failed live wakeword testing.
+During validation, the repository could sometimes reach the idle listening stage
+while a restricted execution context still failed live wakeword testing.
 
-The reason is environmental, not architectural:
+The reason is environmental:
 
-- `sounddevice` could not see any real Core Audio input devices
-- `pvrecorder` only exposed `NULL Capture Device`
-- direct microphone self-tests failed before actual capture
+- `sounddevice` may not see real Core Audio input devices
+- `pvrecorder` may expose only `NULL Capture Device`
+- direct microphone self-tests may fail before actual capture
 
-This means a restricted or non-interactive process can be unable to access real microphone hardware even when the same code works from your normal macOS session.
-
-If your private local project already works, that usually means it is benefiting from:
-
-- a real GUI user session
-- microphone permission already granted
-- working Core Audio device visibility
-- existing local model caches and wakeword assets
-
-So the correct validation target for this public repository is a normal local macOS terminal or LaunchAgent session, not a restricted automation context alone.
+This means "service starts" and "service can really hear speech" are separate
+checks. The correct validation target is a normal macOS terminal or LaunchAgent
+session running from this repository itself.
 
 ## Recommended Real-Machine Validation
 
 After the direct dependency install is complete, validate from your own macOS terminal:
 
-1. Stop the old private voice service and overlay.
-2. Open Terminal on macOS as your normal user.
-3. `cd` into the public repository root.
-4. Activate the repository `.venv`.
-5. Run `./scripts/doctor.sh`.
-6. Run `python -m openclaw_voice_control --config config/default.yaml --env-file .env`.
-7. In a second terminal, run `python -m openclaw_voice_control.overlay_app --config config/default.yaml --env-file .env` if you want overlay coverage too.
-8. Test wakeword, recording, ASR, OpenClaw reply, and TTS from that real local session.
+1. Stop any other voice service or overlay that may still be using the microphone.
+1. Open Terminal on macOS as your normal user.
+2. `cd` into the repository root.
+3. Activate the repository `.venv`.
+4. Run `./scripts/doctor.sh`.
+5. Run `python -m openclaw_voice_control --config config/default.yaml --env-file .env`.
+6. In a second terminal, run `python -m openclaw_voice_control.overlay_app --config config/default.yaml --env-file .env` if you want overlay coverage too.
+7. Test wakeword, recording, ASR, OpenClaw reply, and TTS from that same repository-local session.
 
 ## Background Audio Permission Note
 
-If foreground terminal runs work but the LaunchAgent version still does not light up the microphone or react to wakeword, the most likely cause on macOS is the Python executable identity used by the background process.
+The most important macOS background risk discovered during fresh-clone validation
+was the startup chain itself:
 
-In some macOS setups, an older trusted Python interpreter can behave differently from the repository-local interpreter when launched in the background.
+- `launchd -> shell -> bare python`
 
-The rewritten public repository normally uses its own interpreter inside `.venv/bin/python`.
+That path can be unreliable for microphone permission behavior on some macOS
+systems.
 
-Those can behave differently under macOS privacy controls when launched in the background.
+The public repository now uses a project-owned host app launcher so the background
+path becomes:
 
-To support this case, the public scripts now allow an explicit override:
+- `launchd -> host app -> shell script -> python`
+
+`deploy_macos.sh` now builds the host apps automatically before bootstrapping the
+LaunchAgents. This is the recommended background path.
+
+The generated apps live under:
+
+- `runtime/host_apps/OpenClawVoiceControlServiceHost.app`
+- `runtime/host_apps/OpenClawVoiceControlOverlayHost.app`
+
+The interpreter override variables still exist, but only as optional
+machine-specific troubleshooting knobs:
 
 - `VOICE_CONTROL_PYTHON_BIN`
 - `VOICE_CONTROL_OVERLAY_PYTHON_BIN`
-
-If you need to test whether background microphone access is tied to an already trusted interpreter, set in `.env`:
-
-```bash
-VOICE_CONTROL_PYTHON_BIN=/absolute/path/to/python
-VOICE_CONTROL_OVERLAY_PYTHON_BIN=/absolute/path/to/python
-```
-
-Then redeploy the LaunchAgents and test again.
-
-If you also want the public overlay:
-
-```bash
-python3 -m openclaw_voice_control.overlay_app --config config/default.yaml --env-file .env
-```
 
 ## launchd Install
 
@@ -132,6 +148,8 @@ After the direct run works, install the LaunchAgent:
 chmod +x scripts/*.sh
 ./scripts/deploy_macos.sh
 ```
+
+This command also builds the host launcher apps before install.
 
 ## One-Click Remove
 

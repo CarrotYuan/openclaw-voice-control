@@ -26,7 +26,7 @@ audio:
 
 wakeword:
   provider: porcupine
-  keyword_path: assets/wakeword/hey-jarvis_en_mac_v4_0_0.ppn
+  keyword_path: assets/wakeword/your-model.ppn
   cooldown_seconds: 1.5
 
 tts:

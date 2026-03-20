@@ -32,6 +32,8 @@ check_file "$PROJECT_DIR/.env"
 check_file "$PROJECT_DIR/config/default.yaml"
 check_file "$PROJECT_DIR/scripts/start_service.sh"
 check_file "$PROJECT_DIR/scripts/start_overlay.sh"
+check_file "$PROJECT_DIR/scripts/build_host_apps.sh"
+check_file "$PROJECT_DIR/scripts/openclaw_host_launcher.m"
 check_file "$PROJECT_DIR/launchagents/ai.openclaw.voice-control.plist"
 check_file "$PROJECT_DIR/launchagents/ai.openclaw.overlay.plist"
 
@@ -40,6 +42,7 @@ check_cmd python3
 check_cmd launchctl
 check_cmd say
 check_cmd afplay
+check_cmd clang
 
 echo
 SCAN_TARGETS=(
