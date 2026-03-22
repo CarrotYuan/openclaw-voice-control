@@ -113,8 +113,9 @@ This is only an example. The repository does not ship that file.
 - `OPENCLAW_BASE_URL`
   Use the URL exposed by your local OpenClaw runtime.
 - `OPENCLAW_TOKEN`
-  Use a valid token from your OpenClaw setup. In many local setups this can be
-  found in the gateway-side configuration, such as `openclaw.json-gateway`.
+  Use a valid token from your OpenClaw setup. For this project, prefer the
+  `gateway` configuration in `~/.openclaw/openclaw.json` rather than reading it
+  from device identity files.
 - `PICOVOICE_ACCESS_KEY`
   Create a free account in the [Picovoice Console](https://picovoice.ai/) and
   copy your AccessKey.

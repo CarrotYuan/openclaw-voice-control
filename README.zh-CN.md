@@ -111,7 +111,7 @@
 - `OPENCLAW_BASE_URL`
   使用你本地 OpenClaw 服务暴露出的地址
 - `OPENCLAW_TOKEN`
-  使用你本地 OpenClaw 环境中的有效 token。很多本地部署里，这个值可以在 gateway 侧配置中找到，例如 `openclaw.json-gateway`
+  使用你本地 OpenClaw 环境中的有效 token。对这个项目，优先从 `~/.openclaw/openclaw.json` 的 `gateway` 配置获取，而不是从设备身份文件里读取
 - `PICOVOICE_ACCESS_KEY`
   从 [Picovoice Console](https://picovoice.ai/) 获取
 - `WAKEWORD_FILE`

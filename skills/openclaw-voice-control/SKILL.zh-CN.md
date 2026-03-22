@@ -1,6 +1,15 @@
+---
+name: openclaw-voice-control
+description: Local macOS voice-control integration for OpenClaw. Use when setting up, deploying, troubleshooting, or operating wakeword-triggered voice access to a local OpenClaw agent with ASR, TTS, overlay UI, and launchd background support.
+---
+
 # OpenClaw Voice Control
 
 `OpenClaw Voice Control` 是一个运行在 macOS 上的本地语音控制集成层，用来给 OpenClaw 提供语音唤起、语音识别、语音播报和后台常驻能力。
+
+项目仓库来源：
+
+- GitHub：[CarrotYuan/openclaw-voice-control](https://github.com/CarrotYuan/openclaw-voice-control)
 
 ## 这个 Skill 是什么
 
@@ -70,41 +79,95 @@
 
 ## 安装思路
 
-请先完整阅读 [README.md](../../README.md)。
+当这个 skill 被安装到 OpenClaw 后，请默认从**当前对话智能体所加载的 skill 目录**开始操作。
 
-当前项目的**主安装文档**是 [README.md](../../README.md)。
-[README.zh-CN.md](../../README.zh-CN.md) 是中文辅助说明，便于阅读，但安装时应优先以主 README 为准。
+对于由 OpenClaw 驱动的部署，项目应部署在**当前对话智能体所加载的 skill 目录**中。
+
+开始任何部署动作之前，先遵守这几条：
+
+- 先完整阅读当前这份 `SKILL.md`
+- 优先使用本 skill 明确给出的 GitHub 仓库来源
+- 部署工作保持在当前已安装的 skill 工作目录内
+- 不要擅自切换到别的本地克隆目录或已经配好的旧环境
+
+如果需要项目仓库内容，应先把项目仓库内容同步到当前已安装的 skill 工作目录，再去阅读其中的 `README.md`。
+
+克隆后的项目仓库中：
+
+- `README.md` 是**主安装文档**
+- `README.zh-CN.md` 是中文辅助说明
 
 ## 直接安装路径
 
 如果 AI 或用户需要一眼就能执行的最短安装路径，可以直接按下面顺序操作：
 
-1. 克隆仓库
+1. 从当前已安装的 skill 目录开始，把项目仓库内容放入当前已安装的 skill 工作目录
 2. 创建并激活 `.venv`
 3. 执行 `pip install -e .` 安装依赖
 4. 从 `.env.example` 复制出 `.env`
 5. 在 `.env` 中填好必填配置项
 6. 将真实的 wakeword 文件和模型目录放到配置要求的位置
 7. 先做前台验证
-8. 再执行 `./scripts/deploy_macos.sh` 部署后台常驻
+8. 询问用户是否需要开启后台常驻与自启动
+9. 如果需要，再执行 `./scripts/deploy_macos.sh`
+10. 如果不需要，则停在前台运行方案即可
 
 最短命令路径可以直接写成：
 
 ```bash
-git clone <repo-url>
-cd openclaw-voice-control
+# 从当前对话智能体所加载的 skill 目录开始
+git init
+git remote add origin https://github.com/CarrotYuan/openclaw-voice-control.git
+git fetch --depth 1 origin main
+git checkout -B main FETCH_HEAD
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e .
 cp .env.example .env
 # 在 .env 中填入真实值和本地资源路径
 python -m openclaw_voice_control --config config/default.yaml --env-file .env
+# 先询问用户是否需要后台常驻与自启动
+# 如果需要：
 ./scripts/deploy_macos.sh
 ```
 
+## 执行规则
+
+使用这个 skill 时，请严格遵守下面这些规则：
+
+1. **优先使用这里声明的 GitHub 仓库**
+   - 从 `https://github.com/CarrotYuan/openclaw-voice-control.git` 开始
+   - 不要因为看到别的相似仓库就自行替换
+   - 部署位置固定为当前对话智能体所加载的 skill 目录，不要切到任意其他目录
+
+2. **不要擅自回退到本地现成仓库**
+   - 如果 GitHub 拉取失败，要先明确报告失败原因
+   - 如果发现本地已有克隆，必须先征得用户同意，才能改用它
+
+3. **不要擅自复用旧环境**
+   - 不要默认复用现成 `.venv`、本地模型缓存、旧 `.env` 或私有运行环境
+   - 如果复用缓存可能节省时间，也要先说明并征求同意
+
+4. **不要编造缺失值**
+   - 如果缺少 `.ppn`、token、模型路径或其他关键配置，就停下来，并指向文档中说明的获取位置
+   - 写 `.env` 时必须使用项目要求的真实变量名，尤其是 `OPENCLAW_TOKEN`
+
+5. **谨慎处理敏感信息**
+   - 不要把真实 token 或 key 明文回显到对话里，除非用户明确要求查看
+   - 对这个项目，OpenClaw token 只从 `~/.openclaw/openclaw.json` 的 `gateway` 配置获取
+   - 不要使用 `~/.openclaw/identity/device-auth.json` 作为这个项目的 token 来源
+
+6. **优先走 fresh-clone 可复现路径**
+   - 无论是测试还是部署，都优先采用一个新用户从全新克隆开始也能复现的路径
+
+7. **不要默认强行开启后台常驻**
+   - 当前台验证成功后，先询问用户是否需要后台常驻与自启动
+   - 如果用户只是想本地试跑或手动使用，就停在前台方案
+   - 只有当用户明确需要后台常驻或开机/唤醒后自动可用时，才执行 `./scripts/deploy_macos.sh`
+
 标准流程是：
 
-1. 克隆仓库
+1. 从 GitHub 克隆仓库
 2. 创建 `.venv`
 3. 安装依赖
 4. 从 `.env.example` 复制出 `.env`
@@ -114,10 +177,10 @@ python -m openclaw_voice_control --config config/default.yaml --env-file .env
 
 更详细的步骤、排障和验证说明见：
 
-- [README.md](../../README.md)
-- [README.zh-CN.md](../../README.zh-CN.md)
-- [docs/macos-install.md](../../docs/macos-install.md)
-- [docs/fresh-clone-validation.md](../../docs/fresh-clone-validation.md)
+- 克隆后的仓库中的 `README.md`
+- 克隆后的仓库中的 `README.zh-CN.md`
+- 克隆后的仓库中的 `docs/macos-install.md`
+- 克隆后的仓库中的 `docs/fresh-clone-validation.md`
 
 ## 日常维护方法
 
@@ -130,9 +193,50 @@ python -m openclaw_voice_control --config config/default.yaml --env-file .env
 
 如果用户更习惯在 Finder 中直接点击，也可以使用 `scripts/` 目录里的 `.command` 包装脚本。
 
+## 部署分支选择
+
+当前台链路已经跑通后，要明确区分下面两种部署目标：
+
+- **仅前台 / 手动使用**
+  - 用户只想在需要时手动启动语音助手
+  - 这种情况下，完成前台验证后就可以停止
+  - 不需要开启后台常驻，也不需要开启自启动
+
+- **后台常驻 + 自启动**
+  - 用户希望语音助手在后台常驻，并在登录、唤醒后自动可用
+  - 这种情况下，再继续执行 `./scripts/deploy_macos.sh`
+
+如果用户没有明确表达偏好，就先问，不要自己替用户决定。
+
+## 两种关闭意图
+
+把“关闭语音”类请求只区分成下面两种用户意图：
+
+- **临时关闭语音功能**
+  - 含义：先暂停语音功能，但后面仍可重新开启
+  - 对这种意图，不要删除 skill 文件夹
+  - 如果当前是前台运行，就停止当前运行中的进程
+  - 如果当前是后台常驻，就停止已部署的后台运行时，但不要把它当作永久删除
+
+- **直接删除 skill**
+  - 含义：删除 skill 文件夹本身
+  - 后面如果还要再用，需要重新部署或重新安装
+  - 只有当用户明确要求彻底删除这个 skill 本身时，才这样做
+
+如果用户说的是这类模糊表达：
+
+- “关掉它”
+- “关闭语音”
+- “停止语音服务”
+- “先别让它运行了”
+
+那么不要自己猜，先追问一句：
+
+- 你是想临时关闭语音功能，还是想彻底删除这个 skill？
+
 ## 背景架构为什么重要
 
-当前仓库已经改成：
+当前保留并推荐的后台方案是：
 
 - `launchd -> host app -> shell script -> python`
 
@@ -165,7 +269,7 @@ python -m openclaw_voice_control --config config/default.yaml --env-file .env
 
 如果用户或 AI 发现缺少配置项、模型路径、wakeword 文件或凭据，不要凭空猜测。
 
-请直接查看主安装文档 [README.md](../../README.md) 里的这三节：
+请在克隆项目仓库后，直接查看其中 `README.md` 里的这三节：
 
 - `What You Must Prepare Yourself`
 - `Required Variables`
@@ -181,9 +285,10 @@ python -m openclaw_voice_control --config config/default.yaml --env-file .env
 
 这里再补几条最常用的来源说明：
 
-- `OPENCLAW_TOKEN`：通常可以从本地 OpenClaw gateway 配置中获取，例如 `openclaw.json-gateway`
+- `OPENCLAW_TOKEN`：从 `~/.openclaw/openclaw.json` 的 `gateway` 配置获取
 - `PICOVOICE_ACCESS_KEY`：在 [Picovoice](https://picovoice.ai/) 获取
 - 本地 `.ppn` 唤醒词文件：在 [Picovoice](https://picovoice.ai/) 训练并下载
+- 如果 GitHub 拉取失败，先报告失败，不要直接切换到不相关的本地目录
 
 关于唤醒词还有一个很重要的实战提醒：
 
@@ -209,5 +314,5 @@ python -m openclaw_voice_control --config config/default.yaml --env-file .env
 ## 相关文件
 
 - [SKILL.md](./SKILL.md)
-- [skill.json](../../skill.json)
-- [docs/openclaw-skill.md](../../docs/openclaw-skill.md)
+- 克隆后的仓库中的 `README.md`
+- 克隆后的仓库中的 `README.zh-CN.md`
