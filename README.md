@@ -113,11 +113,14 @@ This is only an example. The repository does not ship that file.
 - `OPENCLAW_BASE_URL`
   Use the URL exposed by your local OpenClaw runtime.
 - `OPENCLAW_TOKEN`
-  Use a valid token from your OpenClaw setup.
+  Use a valid token from your OpenClaw setup. In many local setups this can be
+  found in the gateway-side configuration, such as `openclaw.json-gateway`.
 - `PICOVOICE_ACCESS_KEY`
-  Create a free account in the Picovoice Console and copy your AccessKey.
+  Create a free account in the [Picovoice Console](https://picovoice.ai/) and
+  copy your AccessKey.
 - `WAKEWORD_FILE`
-  Create or download your own Porcupine `.ppn` file from Picovoice Console.
+  Create or download your own Porcupine `.ppn` file from the
+  [Picovoice Console](https://picovoice.ai/).
 - `SENSEVOICE_MODEL_PATH`
   Point this at a local SenseVoiceSmall model directory.
 - `SENSEVOICE_VAD_MODEL_PATH`
@@ -231,6 +234,10 @@ Important:
 
 - the repository does not provide a real `.ppn`
 - do not commit your own `.ppn` into git unless you have clear redistribution rights
+- when training or testing the wakeword in the Picovoice web workflow, make
+  sure the test page clearly shows that the wakeword was triggered successfully
+- if the wakeword does not trigger successfully there, local wakeword response
+  may also fail after deployment
 
 ### 7. Prepare the SenseVoice model
 

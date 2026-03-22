@@ -111,11 +111,11 @@
 - `OPENCLAW_BASE_URL`
   使用你本地 OpenClaw 服务暴露出的地址
 - `OPENCLAW_TOKEN`
-  使用你本地 OpenClaw 环境中的有效 token
+  使用你本地 OpenClaw 环境中的有效 token。很多本地部署里，这个值可以在 gateway 侧配置中找到，例如 `openclaw.json-gateway`
 - `PICOVOICE_ACCESS_KEY`
-  从 Picovoice Console 获取
+  从 [Picovoice Console](https://picovoice.ai/) 获取
 - `WAKEWORD_FILE`
-  从 Picovoice Console 获取或训练你自己的 `.ppn`
+  从 [Picovoice Console](https://picovoice.ai/) 获取或训练你自己的 `.ppn`
 - `SENSEVOICE_MODEL_PATH`
   指向本地 SenseVoiceSmall 目录
 - `SENSEVOICE_VAD_MODEL_PATH`
@@ -199,6 +199,8 @@ assets/wakeword/your-model.ppn
 
 - 仓库不自带真实 `.ppn`
 - 如果你不明确拥有再分发权限，不要把自己的 `.ppn` 提交进 git
+- 在 Picovoice 网站训练和测试唤醒词时，一定要确认测试页面明确显示“成功触发唤醒词”
+- 如果网页测试阶段都没有成功触发，后续本地部署后也可能无法正常响应唤醒
 
 ### 7. 准备 SenseVoice 模型
 
