@@ -1,6 +1,8 @@
 ---
 name: openclaw-voice-control
 description: Local macOS voice-control integration for OpenClaw. Use when setting up, deploying, troubleshooting, or operating wakeword-triggered voice access to a local OpenClaw agent with ASR, TTS, overlay UI, and launchd background support.
+homepage: https://github.com/CarrotYuan/openclaw-voice-control
+metadata: {"openclaw":{"os":["darwin"],"homepage":"https://github.com/CarrotYuan/openclaw-voice-control","requires":{"bins":["python3","git"],"env":["OPENCLAW_TOKEN","PICOVOICE_ACCESS_KEY"]},"primaryEnv":"OPENCLAW_TOKEN"}}
 ---
 
 # OpenClaw Voice Control
