@@ -480,6 +480,41 @@ assets/wakeword/your-model.ppn
 
 请先用上面那段 `AutoModel(model='fsmn-vad')` 的方式完成解析。
 
+### 唤醒成功了，但随后提示“没听清”或“出了点问题”
+
+如果唤醒词已经触发，服务也进入了 listening，但紧接着又提示“没听清”或“出了点问题”，请先查看：
+
+```bash
+logs/voice_control.log
+```
+
+如果日志里出现这类报错：
+
+- `No module named 'torchcodec'`
+- `No such file or directory: 'ffmpeg'`
+
+那通常说明唤醒链路本身是正常的，真正失败的是 **ASR 在转写前的音频解码阶段**。
+
+也就是说：
+
+- 服务已经听到了唤醒词
+- 已经开始录音
+- 但在把录音交给 FunASR / torchaudio 处理时，因为缺少 `torchcodec` 或 `ffmpeg` 而失败
+
+推荐处理方式：
+
+1. 先安装 `ffmpeg`
+2. 如果当前环境仍然要求，再在当前 `.venv` 中安装 `torchcodec`
+
+例如：
+
+```bash
+brew install ffmpeg
+./.venv/bin/pip install torchcodec
+```
+
+这类问题更常见于较新的 Python / torchaudio 组合下，它和“唤醒词没有触发”不是同一种故障。
+
 ### 前台能启动不代表端到端一定成功
 
 需要分开验证：

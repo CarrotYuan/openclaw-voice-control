@@ -83,6 +83,34 @@ Then test microphone capture directly:
 
 If needed, set `audio.input_device_index` in `config/default.yaml`.
 
+## Audio Decode Dependency Note
+
+If wakeword detection works and the service enters listening, but the turn still
+fails during transcription, inspect `logs/voice_control.log`.
+
+If you see errors such as:
+
+- `No module named 'torchcodec'`
+- `No such file or directory: 'ffmpeg'`
+
+then the failure is not the wakeword itself. The failure is in the audio decode
+path used before FunASR transcription completes.
+
+Recommended fix order:
+
+1. install `ffmpeg`
+2. if the active environment still requires it, install `torchcodec` into the
+   repository `.venv`
+
+Example:
+
+```bash
+brew install ffmpeg
+./.venv/bin/pip install torchcodec
+```
+
+This can appear on newer Python / torchaudio combinations.
+
 ## Why A New Environment Can Still Fail Even When Startup Looks Healthy
 
 During validation, the repository could sometimes reach the idle listening stage

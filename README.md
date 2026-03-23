@@ -609,6 +609,38 @@ Use the FunASR resolution flow described above, then copy the resolved model int
 models/fsmn-vad
 ```
 
+### Wakeword works but the turn still fails with "something went wrong" or "didn't hear clearly"
+
+If wakeword detection succeeds and listening starts, but the turn still fails a
+moment later, inspect `logs/voice_control.log`.
+
+If the log shows errors such as:
+
+- `No module named 'torchcodec'`
+- `No such file or directory: 'ffmpeg'`
+
+then the wakeword path is working, but ASR audio decoding is failing before
+transcription can complete.
+
+In practice, this means the service heard the wakeword, started recording, and
+then failed while decoding the recorded audio for FunASR / torchaudio.
+
+Recommended fixes:
+
+1. install `ffmpeg`
+2. if your environment still requires it, install `torchcodec` into the active
+   `.venv`
+
+Example:
+
+```bash
+brew install ffmpeg
+./.venv/bin/pip install torchcodec
+```
+
+This issue is more likely on newer Python / torchaudio combinations. It is not
+the same as a wakeword failure.
+
 ### Foreground works but background does not react to speech
 
 Treat these as separate checks:

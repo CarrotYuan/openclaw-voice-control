@@ -85,8 +85,15 @@ Before doing anything else:
 - keep deployment work inside the current installed skill workspace
 - do not silently switch to some other local clone or an already-prepared environment
 
-If repository contents are needed, sync or clone them into the current
-installed skill workspace, then read that local `README.md`.
+Before any install, config, deploy, restart, uninstall, or troubleshooting step,
+first sync the full repository contents into the current installed skill
+workspace. Do not continue if the workspace only contains `SKILL.md`.
+
+Do not treat a partial checkout, a copied README, or a few manually created
+files as equivalent to a full repository sync.
+
+After the full repository is present in the current installed skill workspace,
+read that local `README.md`.
 
 `README.md` in the cloned repository is the primary installation guide.
 `README.zh-CN.md` in the cloned repository is the Chinese companion guide.
@@ -95,7 +102,7 @@ installed skill workspace, then read that local `README.md`.
 
 If an AI or user needs the shortest usable install path, use this sequence:
 
-1. from the installed skill directory, populate the current installed skill workspace with the project repository contents
+1. from the installed skill directory, sync the full project repository into the current installed skill workspace
 2. create and activate `.venv`
 3. install dependencies with `pip install -e .`
 4. copy `.env.example` to `.env`
@@ -114,6 +121,8 @@ git init
 git remote add origin https://github.com/CarrotYuan/openclaw-voice-control.git
 git fetch --depth 1 origin main
 git checkout -B main FETCH_HEAD
+# do not continue until the workspace contains the real repository files,
+# including scripts/, src/, config/, launchagents/, and README.md
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e .
@@ -133,6 +142,8 @@ When using this skill, follow these rules strictly:
    - start from `https://github.com/CarrotYuan/openclaw-voice-control.git`
    - do not substitute another repository just because it looks similar
    - deploy into the current conversation agent's installed skill directory, not into an arbitrary directory
+   - before continuing, make sure the current installed skill workspace contains the full repository contents, not just `SKILL.md`
+   - if `scripts/`, `src/`, `config/`, `launchagents/`, and `README.md` are not present, the repository has not been fully synced yet
 
 2. **Do not silently fall back to a local clone**
    - if GitHub access fails, report the failure clearly
@@ -161,7 +172,7 @@ When using this skill, follow these rules strictly:
 
 The normal setup flow is:
 
-1. clone the repository from GitHub
+1. sync the full repository from GitHub into the current installed skill workspace
 2. create `.venv`
 3. install dependencies
 4. copy `.env.example` to `.env`
@@ -274,6 +285,7 @@ Practical source notes:
 - `PICOVOICE_ACCESS_KEY`: obtain it from [Picovoice](https://picovoice.ai/)
 - local `.ppn` wakeword file: create and download it from [Picovoice](https://picovoice.ai/)
 - if GitHub clone fails, report that first rather than switching to an unrelated local directory
+- if wakeword succeeds but the turn still fails, inspect `logs/voice_control.log`; missing `ffmpeg` or `torchcodec` means audio decode failed before ASR transcription
 
 Important wakeword reminder:
 
