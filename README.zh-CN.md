@@ -480,40 +480,27 @@ assets/wakeword/your-model.ppn
 
 请先用上面那段 `AutoModel(model='fsmn-vad')` 的方式完成解析。
 
-### 唤醒成功了，但随后提示“没听清”或“出了点问题”
+### ASR 能启动，但识别结果是明显乱码
 
-如果唤醒词已经触发，服务也进入了 listening，但紧接着又提示“没听清”或“出了点问题”，请先查看：
+如果唤醒词已经正常触发，服务也进入了 listening，但识别结果看起来像多语种碎片、随机 token 或明显乱码，请检查本地 SenseVoice 模型目录是否真的完整。
 
-```bash
-logs/voice_control.log
-```
+尤其要确认：
 
-如果日志里出现这类报错：
+- `models/SenseVoiceSmall`
 
-- `No module named 'torchcodec'`
-- `No such file or directory: 'ffmpeg'`
+或者 `SENSEVOICE_MODEL_PATH` 指向的目录里，是否仍然包含核心权重文件：
 
-那通常说明唤醒链路本身是正常的，真正失败的是 **ASR 在转写前的音频解码阶段**。
+- `model.pt`
 
-也就是说：
+有些情况下，目录本身虽然存在，但如果缺少 `model.pt` 或其他关键文件，ASR 仍可能“看起来能启动”，但最终输出会是异常乱码。
 
-- 服务已经听到了唤醒词
-- 已经开始录音
-- 但在把录音交给 FunASR / torchaudio 处理时，因为缺少 `torchcodec` 或 `ffmpeg` 而失败
-
-推荐处理方式：
-
-1. 先安装 `ffmpeg`
-2. 如果当前环境仍然要求，再在当前 `.venv` 中安装 `torchcodec`
-
-例如：
+如果有怀疑，建议重新下载或重新复制完整模型目录：
 
 ```bash
-brew install ffmpeg
-./.venv/bin/pip install torchcodec
+./.venv/bin/modelscope download --model iic/SenseVoiceSmall --local_dir models/SenseVoiceSmall
 ```
 
-这类问题更常见于较新的 Python / torchaudio 组合下，它和“唤醒词没有触发”不是同一种故障。
+不要只因为“目录存在”就认定模型可用，关键文件必须完整。
 
 ### 前台能启动不代表端到端一定成功
 

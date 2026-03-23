@@ -83,33 +83,24 @@ Then test microphone capture directly:
 
 If needed, set `audio.input_device_index` in `config/default.yaml`.
 
-## Audio Decode Dependency Note
+## SenseVoice Model Completeness Note
 
-If wakeword detection works and the service enters listening, but the turn still
-fails during transcription, inspect `logs/voice_control.log`.
+If wakeword detection works and the service enters listening, but recognized
+text becomes obvious garbage, multilingual fragments, or random token-like
+output, verify that the local SenseVoice model directory is complete.
 
-If you see errors such as:
+In particular, check that the configured SenseVoice directory still contains:
 
-- `No module named 'torchcodec'`
-- `No such file or directory: 'ffmpeg'`
+- `model.pt`
 
-then the failure is not the wakeword itself. The failure is in the audio decode
-path used before FunASR transcription completes.
+A directory can exist while still being incomplete. If `model.pt` is missing,
+ASR may appear to start but produce unusable output.
 
-Recommended fix order:
-
-1. install `ffmpeg`
-2. if the active environment still requires it, install `torchcodec` into the
-   repository `.venv`
-
-Example:
+If needed, repopulate the full model directory:
 
 ```bash
-brew install ffmpeg
-./.venv/bin/pip install torchcodec
+./.venv/bin/modelscope download --model iic/SenseVoiceSmall --local_dir models/SenseVoiceSmall
 ```
-
-This can appear on newer Python / torchaudio combinations.
 
 ## Why A New Environment Can Still Fail Even When Startup Looks Healthy
 

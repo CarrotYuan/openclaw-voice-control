@@ -609,37 +609,28 @@ Use the FunASR resolution flow described above, then copy the resolved model int
 models/fsmn-vad
 ```
 
-### Wakeword works but the turn still fails with "something went wrong" or "didn't hear clearly"
+### ASR starts but the recognized text is obvious garbage
 
-If wakeword detection succeeds and listening starts, but the turn still fails a
-moment later, inspect `logs/voice_control.log`.
+If wakeword detection works, the service enters listening, and the recognized
+text looks like multilingual garbage or random token fragments, check whether
+the local SenseVoice model directory is actually complete.
 
-If the log shows errors such as:
+In particular, verify that `models/SenseVoiceSmall` (or whatever
+`SENSEVOICE_MODEL_PATH` points to) still contains the core model weight file:
 
-- `No module named 'torchcodec'`
-- `No such file or directory: 'ffmpeg'`
+- `model.pt`
 
-then the wakeword path is working, but ASR audio decoding is failing before
-transcription can complete.
+A directory that exists but is missing `model.pt` or other core files can still
+look "present" while producing broken ASR output.
 
-In practice, this means the service heard the wakeword, started recording, and
-then failed while decoding the recorded audio for FunASR / torchaudio.
-
-Recommended fixes:
-
-1. install `ffmpeg`
-2. if your environment still requires it, install `torchcodec` into the active
-   `.venv`
-
-Example:
+If needed, re-download or re-copy the full model directory:
 
 ```bash
-brew install ffmpeg
-./.venv/bin/pip install torchcodec
+./.venv/bin/modelscope download --model iic/SenseVoiceSmall --local_dir models/SenseVoiceSmall
 ```
 
-This issue is more likely on newer Python / torchaudio combinations. It is not
-the same as a wakeword failure.
+Do not treat "directory exists" as sufficient validation. The model contents
+must be complete.
 
 ### Foreground works but background does not react to speech
 
