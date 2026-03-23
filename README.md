@@ -52,7 +52,7 @@ Before this repository can work on a new machine, prepare all of the following:
 - a Picovoice AccessKey
 - a real `.ppn` wakeword file
 - microphone permission on macOS
-- local ASR model files
+- a way to download the local ASR model files described below
 
 The repository does not bundle:
 
@@ -63,7 +63,8 @@ The repository does not bundle:
 - a preconfigured OpenClaw runtime
 
 That is intentional. A fresh clone is expected to stay incomplete until those
-local assets and secrets are provided.
+local assets and secrets are provided or downloaded through the documented
+setup steps.
 
 ## Required Variables
 

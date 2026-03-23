@@ -64,7 +64,7 @@
 - 有效的 `PICOVOICE_ACCESS_KEY`
 - 一个真实的 Porcupine `.ppn` 唤醒词文件
 - macOS 麦克风权限
-- 本地 ASR 模型文件
+- 以及按下文步骤下载本地 ASR 模型的能力
 
 ## 最少必须填写的环境变量
 

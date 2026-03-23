@@ -45,7 +45,10 @@ This skill does not bundle:
 - VAD model files
 - a private OpenClaw runtime
 
-That means installation still requires user-provided local assets and secrets.
+That means installation still requires user-provided secrets and a real `.ppn`
+wakeword file. The SenseVoice and VAD model directories should normally be
+downloaded or populated through the documented repository setup steps rather
+than guessed manually.
 
 ## Required User-Provided Items
 
@@ -56,8 +59,8 @@ Before this skill can run, the user must prepare:
 - `OPENCLAW_TOKEN`
 - `PICOVOICE_ACCESS_KEY`
 - a real local `.ppn` wakeword file
-- a local SenseVoice model directory
-- a local VAD model directory
+- a way to download or populate the local SenseVoice model directory
+- a way to download or populate the local VAD model directory
 - macOS microphone permission
 
 ## Recommended Defaults
