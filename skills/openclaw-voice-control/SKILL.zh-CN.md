@@ -68,10 +68,10 @@ metadata: {"openclaw":{"os":["darwin"],"homepage":"https://github.com/CarrotYuan
 6. 从 `.env.example` 复制出 `.env`
 7. 在 `.env` 中填好必填配置项
 8. 使用默认的 openWakeWord 路线
-9. 先做前台验证，并同时启动语音主服务和浮窗
+9. 先做手动启动测试，并同时启动语音主服务和浮窗
 10. 询问用户是否需要后台常驻与自启动
 11. 如果需要，再执行 `./scripts/deploy_macos.sh`
-12. 如果不需要，则停在前台运行方案
+12. 如果不需要，则停在手动启动测试方案
 
 在这条主线里，只要涉及会改本地系统状态的动作，都必须先明确告诉用户并征得确认，包括：
 
@@ -104,7 +104,17 @@ python -m openclaw_voice_control --config config/default.yaml --env-file .env
 python -m openclaw_voice_control.overlay_app --config config/default.yaml --env-file .env
 ```
 
-只有上面两个命令同时运行，才算完整的前台验证。
+只有上面两个命令同时运行，才算完整的手动启动测试。
+
+手动启动测试完成后，在进行任何下一步操作之前，先关闭这轮测试。
+
+包括：
+
+- 部署后台常驻
+- 验证自启动
+- 再开新一轮手动测试
+
+如果旧的手动启动语音服务和浮窗仍然在运行，就可能同时存在两套语音实例，导致一次唤醒触发两次响应、两次回答。
 
 ## 开始前需要具备什么
 
@@ -207,11 +217,11 @@ Picovoice / Porcupine 现在是可选备选方案，不是默认路线。
    - 对这个项目，OpenClaw token 只从 `~/.openclaw/openclaw.json` 的 `gateway` 配置获取。
    - 不要使用 `~/.openclaw/identity/device-auth.json` 作为这个项目的 token 来源。
 
-6. 前台验证优先，后台部署要先征求用户确认。
+6. 手动启动测试优先，后台部署要先征求用户确认。
    - 不要默认认为可以直接拉仓库、执行 `pip install -e .`、下载模型，或开启 `launchd` 行为。
    - 先说明动作内容，再在用户确认后继续。
-   - 前台验证指的是：从同一个已安装 skill 工作目录，同时启动语音主服务和浮窗。
-   - 当前台验证成功后，再问用户是否需要后台常驻与自启动。
+   - 手动启动测试指的是：从同一个已安装 skill 工作目录，同时启动语音主服务和浮窗。
+   - 当手动启动测试成功后，再问用户是否需要后台常驻与自启动。
    - 只有用户明确需要时，才执行 `./scripts/deploy_macos.sh`。
 
 ## 日常维护
@@ -230,7 +240,7 @@ Picovoice / Porcupine 现在是可选备选方案，不是默认路线。
 把“关闭语音”类请求只区分成两种用户意图：
 
 - 临时关闭语音功能
-  - 停止当前前台进程，或停止已部署的后台运行时
+  - 停止当前手动启动进程，或停止已部署的后台运行时
   - 不删除 skill 文件夹
 - 直接删除 skill
   - 删除 skill 文件夹本身

@@ -341,9 +341,9 @@ models/fsmn-vad
 - `list_audio_devices.py` 能看到真实输入设备
 - `test_microphone.py` 说话时 RMS 会变化
 
-### 10. 前台启动主服务
+### 10. 手动启动主服务进行测试
 
-前台验证是一个双进程测试。
+手动启动测试是一个双进程测试。
 
 不要只启动语音主服务，也不要只启动浮窗。
 
@@ -361,7 +361,7 @@ python -m openclaw_voice_control --config config/default.yaml --env-file .env
 - `Wakeword engine ready`
 - `Entered idle listening loop`
 
-### 11. 前台启动浮窗
+### 11. 手动启动浮窗进行测试
 
 从同一个仓库根目录，在第二个终端执行：
 
@@ -376,19 +376,31 @@ python -m openclaw_voice_control.overlay_app --config config/default.yaml --env-
 - 正在思考
 - 正在回复
 
-### 12. 验证前台完整链路
+### 12. 验证完整手动测试链路
 
-要验证完整前台链路，上面两个命令必须同时保持运行。
+要验证完整手动测试链路，上面两个命令必须同时保持运行。
 
 说出唤醒词和一个简短请求。
 
-当前台完整链路真正跑通时，你通常会看到：
+当完整手动测试链路真正跑通时，你通常会看到：
 
 - 唤醒词触发
 - 开始录音
 - ASR 成功
 - OpenClaw 返回回复
 - TTS 成功播报
+
+重要提醒：
+
+手动测试完成后，在进行任何下一步操作之前，先关闭这轮测试。
+
+包括但不限于：
+
+- 部署后台常驻
+- 验证自启动
+- 再开新一轮手动测试
+
+如果旧的手动启动语音服务和浮窗还在运行，就可能同时存在两套语音实例，导致一次唤醒触发两次响应、两次回答。
 
 ### 13. 部署后台 LaunchAgents
 
@@ -431,7 +443,7 @@ python -m openclaw_voice_control.overlay_app --config config/default.yaml --env-
 
 - 服务是否保持在后台运行
 - 麦克风是否真的可用
-- 在不依赖前台终端的情况下，唤醒词是否还能触发
+- 在不依赖手动启动终端的情况下，唤醒词是否还能触发
 - 回复和浮窗是否正常
 
 重要提醒：
@@ -485,9 +497,9 @@ python -m openclaw_voice_control.overlay_app --config config/default.yaml --env-
 - LaunchAgent 注册记录
 - `runtime/host_apps` 下生成的 host app
 - 匹配到的 host app 进程
-- 匹配到的前台测试 Python 进程
+- 匹配到的手动测试 Python 进程
 
-这是因为真实测试中发现，如果前台测试进程残留，很容易误以为“卸载失败”。
+这是因为真实测试中发现，如果手动测试进程残留，很容易误以为“卸载失败”。
 
 ## 重要配置位置
 
@@ -609,12 +621,12 @@ OPENWAKEWORD_THRESHOLD=0.75
 
 不要只因为“目录存在”就认定模型可用，关键文件必须完整。
 
-### 前台能启动不代表端到端一定成功
+### 手动启动成功不代表端到端一定成功
 
 需要分开验证：
 
-- 前台启动
-- 前台完整交互
+- 手动启动
+- 手动完整交互
 - 后台部署
 - 后台唤醒与回复
 - 自启动
@@ -638,7 +650,7 @@ OPENWAKEWORD_THRESHOLD=0.75
 
 真实测试发现，原因可能不是 LaunchAgent 没卸载，而是：
 
-- 前台测试 Python 进程还活着
+- 手动测试 Python 进程还活着
 - 生成的 host app 还留在 `runtime/host_apps`
 
 当前脚本已经针对这两类内容做了清理。

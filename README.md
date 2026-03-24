@@ -34,7 +34,7 @@ It is written to cover the full path from:
 
 - fresh clone
 - local asset preparation
-- foreground validation
+- direct-run validation
 - background LaunchAgent deployment
 - successful resident wakeword behavior on macOS
 
@@ -395,9 +395,9 @@ What you want to see:
 - `list_audio_devices.py` shows a real input device, not only `NULL Capture Device`
 - `test_microphone.py` reports changing RMS values when you speak
 
-### 10. Test the service in the foreground
+### 10. Start the service directly for testing
 
-Foreground validation is a two-process test.
+Direct-run validation is a two-process test.
 
 Do not start only the voice service or only the overlay.
 
@@ -421,7 +421,7 @@ This proves:
 - config loading is working
 - local model paths and wakeword provider configuration are valid
 
-### 11. Test the overlay in the foreground
+### 11. Start the overlay directly for testing
 
 From the same repository root in a second terminal:
 
@@ -438,20 +438,34 @@ It is expected to appear during:
 - thinking
 - reply playback
 
-### 12. Test the real voice path in the foreground
+### 12. Test the real voice path with direct-run validation
 
-For a complete foreground test, both commands above must still be running at
+For a complete direct-run test, both commands above must still be running at
 the same time.
 
 Say a wakeword and a short voice request.
 
-A meaningful foreground success looks like:
+A meaningful direct-run success looks like:
 
 - wakeword triggers
 - recording begins
 - ASR finishes
 - OpenClaw returns a reply
 - TTS speaks the reply
+
+Important next-step reminder:
+
+Before doing anything after a direct-run test, stop that test first.
+
+That includes actions such as:
+
+- deploying background resident behavior
+- validating auto-start
+- starting another direct-run test
+
+If the old direct-run service and overlay are left running, you can end up with
+two active voice runtimes at the same time, which can trigger two wakeword
+responses and two replies.
 
 ### 13. Deploy background LaunchAgents
 
@@ -494,7 +508,7 @@ After deployment:
 - confirm the service stays running in the background
 - confirm the microphone is actually being used
 - say the wakeword again
-- verify wakeword, reply, and overlay behavior without relying on the foreground terminal process
+- verify wakeword, reply, and overlay behavior without relying on the direct-run terminal process
 
 Important timing note:
 
@@ -550,13 +564,13 @@ attempts to clean up:
 - LaunchAgent registrations
 - generated host-app executables under `runtime/host_apps`
 - matching host-app processes
-- matching foreground Python test processes
+- matching direct-run Python test processes
 
-This matters because manual foreground tests can otherwise remain alive and make
+This matters because direct-run tests can otherwise remain alive and make
 it look like uninstall only removed the overlay while the voice service is still
 running.
 
-It also matters because repeated validation showed that a foreground test
+It also matters because repeated validation showed that a direct-run test
 process can survive in parallel with the LaunchAgent-managed background service
 and confuse later deployment or uninstall checks.
 
@@ -775,8 +789,8 @@ must be complete.
 
 Treat these as separate checks:
 
-- foreground startup
-- foreground wakeword and reply
+- direct-run startup
+- direct-run wakeword and reply
 - background deployment
 - background microphone visibility
 
@@ -867,14 +881,14 @@ Resolution:
 
 Observed:
 
-- foreground startup could succeed while end-to-end interaction or background
+- direct-run startup could succeed while end-to-end interaction or background
   behavior was still not proven
 
 Resolution:
 
 - separate validation into:
-  - foreground startup
-  - foreground interaction
+  - direct-run startup
+  - direct-run interaction
   - background deployment
   - background wakeword and auto-start
 
@@ -919,7 +933,7 @@ Resolution:
 
 Observed:
 
-- foreground Python test runs could survive uninstall
+- direct-run Python test runs could survive uninstall
 - generated host-app binaries could also remain in place
 - this made it look like uninstall had failed even when LaunchAgents were gone
 
@@ -929,7 +943,7 @@ Resolution:
   - LaunchAgent registrations
   - generated host apps under `runtime/host_apps`
   - matching host-app processes
-  - matching foreground Python test processes
+  - matching direct-run Python test processes
 
 ## Important Current Limits
 

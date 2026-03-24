@@ -68,10 +68,10 @@ Use this as the standard install path:
 6. copy `.env.example` to `.env`
 7. fill the required values in `.env`
 8. use the default openWakeWord route
-9. run foreground validation with both the voice service and overlay process
+9. run direct-run validation with both the voice service and overlay process
 10. ask whether the user wants background resident behavior and auto-start
 11. if yes, run `./scripts/deploy_macos.sh`
-12. if no, stop after foreground validation
+12. if no, stop after direct-run validation
 
 Before running any system-changing step in that path, explicitly tell the user
 what you are about to do and get confirmation for:
@@ -106,8 +106,20 @@ python -m openclaw_voice_control --config config/default.yaml --env-file .env
 python -m openclaw_voice_control.overlay_app --config config/default.yaml --env-file .env
 ```
 
-Foreground validation is not complete unless both commands above are running at
+Direct-run validation is not complete unless both commands above are running at
 the same time from the same installed skill workspace.
+
+Before any next step after direct-run validation, stop that test
+first.
+
+This includes:
+
+- background resident deployment
+- auto-start validation
+- starting another direct-run test
+
+If an old direct-run service and overlay are left running, two active voice
+runtimes can respond to the same wakeword and produce duplicate replies.
 
 ## What Must Exist Before Setup
 
@@ -220,7 +232,7 @@ When using this skill, follow these rules:
 
 7. Ask before enabling background resident behavior.
    - Foreground validation comes first.
-   - Foreground validation means starting both `python -m openclaw_voice_control --config config/default.yaml --env-file .env` and `python -m openclaw_voice_control.overlay_app --config config/default.yaml --env-file .env` from the same installed skill workspace.
+   - Direct-run validation means starting both `python -m openclaw_voice_control --config config/default.yaml --env-file .env` and `python -m openclaw_voice_control.overlay_app --config config/default.yaml --env-file .env` from the same installed skill workspace.
    - Only run `./scripts/deploy_macos.sh` when the user explicitly wants background resident behavior or auto-start.
 
 ## Daily Maintenance
@@ -239,7 +251,7 @@ Double-click `.command` wrappers are also available in `scripts/` for macOS user
 Treat shutdown requests as one of these two user intents:
 
 - temporarily disable voice functionality
-  - stop the running foreground process, or stop the deployed background runtime
+  - stop the running direct-run process, or stop the deployed background runtime
   - do not delete the skill folder
 - delete the skill completely
   - remove the skill folder itself

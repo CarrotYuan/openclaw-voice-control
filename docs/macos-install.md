@@ -144,8 +144,9 @@ After the direct dependency install is complete, validate from your own macOS te
 4. Run `./scripts/doctor.sh`.
 5. Run `python -m openclaw_voice_control --config config/default.yaml --env-file .env`.
 6. In a second terminal from the same repository root, run `python -m openclaw_voice_control.overlay_app --config config/default.yaml --env-file .env`.
-7. Keep both processes running during foreground validation. Do not test only one of them.
+7. Keep both processes running during direct-run validation. Do not test only one of them.
 8. Test wakeword, recording, ASR, OpenClaw reply, TTS, and overlay behavior from that same repository-local session.
+9. Before any next step such as background deploy, auto-start validation, or a second direct-run test, stop the existing direct-run voice service and overlay first. Otherwise two active runtimes can respond to the same wakeword and produce duplicate replies.
 
 ## Background Audio Permission Note
 
