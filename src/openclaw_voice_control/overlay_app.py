@@ -398,7 +398,6 @@ class RestorePillWindow(QWidget):
     def show_pill(self):
         self.move(self.target_pos())
         self.show()
-        self.raise_()
         self.update()
 
     def hide_pill(self):
@@ -716,7 +715,6 @@ class OverlayWindow(QWidget):
 
         self.move(start_pos)
         self.show()
-        self.raise_()
 
         self.fade_anim.stop()
         self.fade_anim.setStartValue(self.windowOpacity())

@@ -135,7 +135,9 @@ That path is only a placeholder. The repository does not ship a real `.ppn`.
 ## Where To Get Each Requirement
 
 - `OPENCLAW_BASE_URL`
-  Use the URL exposed by your local OpenClaw runtime.
+  Use the full chat completions endpoint exposed by your local OpenClaw runtime.
+  Do not use only the host and port root. For the default local setup, use
+  `http://127.0.0.1:18789/v1/chat/completions`.
 - `OPENCLAW_TOKEN`
   Use a valid token from your OpenClaw setup. For this project, prefer the
   `gateway` configuration in `~/.openclaw/openclaw.json` rather than reading it

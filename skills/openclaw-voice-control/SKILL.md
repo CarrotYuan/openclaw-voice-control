@@ -301,6 +301,7 @@ After syncing the repository into the current installed skill workspace, read th
 
 Practical source notes:
 
+- `OPENCLAW_BASE_URL`: use the full OpenClaw chat completions endpoint, not only the host and port root. For the default local setup, use `http://127.0.0.1:18789/v1/chat/completions`
 - `OPENCLAW_TOKEN`: obtain it from the local OpenClaw gateway configuration in `~/.openclaw/openclaw.json`, under `gateway`
 - default wakeword route: use openWakeWord with the built-in English `hey jarvis` model
 - optional Porcupine route: obtain `PICOVOICE_ACCESS_KEY` and the local `.ppn` file from [Picovoice](https://picovoice.ai/)

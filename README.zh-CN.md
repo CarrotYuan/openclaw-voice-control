@@ -129,7 +129,7 @@
 ## 每个资源从哪里来
 
 - `OPENCLAW_BASE_URL`
-  使用你本地 OpenClaw 服务暴露出的地址
+  使用你本地 OpenClaw 服务暴露出的完整聊天接口 URL，不要只填主机和端口根路径。默认本地部署应使用 `http://127.0.0.1:18789/v1/chat/completions`
 - `OPENCLAW_TOKEN`
   使用你本地 OpenClaw 环境中的有效 token。对这个项目，优先从 `~/.openclaw/openclaw.json` 的 `gateway` 配置获取，而不是从设备身份文件里读取
 - 默认唤醒词路线

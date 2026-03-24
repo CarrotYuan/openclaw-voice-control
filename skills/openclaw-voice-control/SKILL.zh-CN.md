@@ -290,6 +290,7 @@ Picovoice / Porcupine 现在是可选备选方案，不是默认路线。
 
 最常用的来源说明：
 
+- `OPENCLAW_BASE_URL`：使用 OpenClaw 的完整聊天接口 URL，不要只填主机和端口根路径。默认本地部署应使用 `http://127.0.0.1:18789/v1/chat/completions`
 - `OPENCLAW_TOKEN`：从 `~/.openclaw/openclaw.json` 的 `gateway` 配置获取
 - 默认唤醒词路线：使用 openWakeWord 自带的英文 `hey jarvis`
 - 可选 Porcupine 路线：`PICOVOICE_ACCESS_KEY` 和本地 `.ppn` 从 [Picovoice](https://picovoice.ai/) 获取
