@@ -31,7 +31,7 @@ wakeword:
   keyword_path:
   threshold: 0.65
   cooldown_seconds: 1.5
-  rearm_seconds_after_turn: 2.0
+  rearm_seconds_after_turn: 0.0
 
 tts:
   engine: macos_say

@@ -343,6 +343,12 @@ models/fsmn-vad
 
 ### 10. 前台启动主服务
 
+前台验证是一个双进程测试。
+
+不要只启动语音主服务，也不要只启动浮窗。
+
+从仓库根目录，在第一个终端执行：
+
 ```bash
 python -m openclaw_voice_control --config config/default.yaml --env-file .env
 ```
@@ -357,7 +363,7 @@ python -m openclaw_voice_control --config config/default.yaml --env-file .env
 
 ### 11. 前台启动浮窗
 
-在第二个终端执行：
+从同一个仓库根目录，在第二个终端执行：
 
 ```bash
 python -m openclaw_voice_control.overlay_app --config config/default.yaml --env-file .env
@@ -371,6 +377,8 @@ python -m openclaw_voice_control.overlay_app --config config/default.yaml --env-
 - 正在回复
 
 ### 12. 验证前台完整链路
+
+要验证完整前台链路，上面两个命令必须同时保持运行。
 
 说出唤醒词和一个简短请求。
 

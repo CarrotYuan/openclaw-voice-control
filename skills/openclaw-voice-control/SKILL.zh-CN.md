@@ -66,7 +66,7 @@ description: Local macOS voice-control integration for OpenClaw. Use when settin
 6. 从 `.env.example` 复制出 `.env`
 7. 在 `.env` 中填好必填配置项
 8. 使用默认的 openWakeWord 路线
-9. 先做前台验证
+9. 先做前台验证，并同时启动语音主服务和浮窗
 10. 询问用户是否需要后台常驻与自启动
 11. 如果需要，再执行 `./scripts/deploy_macos.sh`
 12. 如果不需要，则停在前台运行方案
@@ -89,8 +89,13 @@ from funasr import AutoModel
 AutoModel(model='fsmn-vad', disable_update=True)
 PY
 cp .env.example .env
+# 终端 1，从当前已安装的 skill 工作目录执行
 python -m openclaw_voice_control --config config/default.yaml --env-file .env
+# 终端 2，从同一个工作目录执行
+python -m openclaw_voice_control.overlay_app --config config/default.yaml --env-file .env
 ```
+
+只有上面两个命令同时运行，才算完整的前台验证。
 
 ## 开始前需要具备什么
 
@@ -176,6 +181,7 @@ Picovoice / Porcupine 现在是可选备选方案，不是默认路线。
    - 不要使用 `~/.openclaw/identity/device-auth.json` 作为这个项目的 token 来源。
 
 6. 前台验证优先，后台部署要先征求用户确认。
+   - 前台验证指的是：从同一个已安装 skill 工作目录，同时启动语音主服务和浮窗。
    - 当前台验证成功后，再问用户是否需要后台常驻与自启动。
    - 只有用户明确需要时，才执行 `./scripts/deploy_macos.sh`。
 

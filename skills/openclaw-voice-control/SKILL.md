@@ -68,7 +68,7 @@ Use this as the standard install path:
 6. copy `.env.example` to `.env`
 7. fill the required values in `.env`
 8. use the default openWakeWord route
-9. run foreground validation
+9. run foreground validation with both the voice service and overlay process
 10. ask whether the user wants background resident behavior and auto-start
 11. if yes, run `./scripts/deploy_macos.sh`
 12. if no, stop after foreground validation
@@ -92,8 +92,14 @@ from funasr import AutoModel
 AutoModel(model='fsmn-vad', disable_update=True)
 PY
 cp .env.example .env
+# terminal 1, from the current installed skill workspace
 python -m openclaw_voice_control --config config/default.yaml --env-file .env
+# terminal 2, from the same workspace
+python -m openclaw_voice_control.overlay_app --config config/default.yaml --env-file .env
 ```
+
+Foreground validation is not complete unless both commands above are running at
+the same time from the same installed skill workspace.
 
 ## What Must Exist Before Setup
 
@@ -183,6 +189,7 @@ When using this skill, follow these rules:
 
 6. Ask before enabling background resident behavior.
    - Foreground validation comes first.
+   - Foreground validation means starting both `python -m openclaw_voice_control --config config/default.yaml --env-file .env` and `python -m openclaw_voice_control.overlay_app --config config/default.yaml --env-file .env` from the same installed skill workspace.
    - Only run `./scripts/deploy_macos.sh` when the user explicitly wants background resident behavior or auto-start.
 
 ## Daily Maintenance

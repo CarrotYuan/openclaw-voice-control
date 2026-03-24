@@ -395,6 +395,12 @@ What you want to see:
 
 ### 10. Test the service in the foreground
 
+Foreground validation is a two-process test.
+
+Do not start only the voice service or only the overlay.
+
+From the repository root in the first terminal:
+
 ```bash
 python -m openclaw_voice_control --config config/default.yaml --env-file .env
 ```
@@ -415,7 +421,7 @@ This proves:
 
 ### 11. Test the overlay in the foreground
 
-In a second terminal:
+From the same repository root in a second terminal:
 
 ```bash
 python -m openclaw_voice_control.overlay_app --config config/default.yaml --env-file .env
@@ -431,6 +437,9 @@ It is expected to appear during:
 - reply playback
 
 ### 12. Test the real voice path in the foreground
+
+For a complete foreground test, both commands above must still be running at
+the same time.
 
 Say a wakeword and a short voice request.
 
