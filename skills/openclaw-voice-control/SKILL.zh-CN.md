@@ -1,6 +1,8 @@
 ---
 name: openclaw-voice-control
 description: Local macOS voice-control integration for OpenClaw. Use when setting up, deploying, troubleshooting, or operating wakeword-triggered voice access to a local OpenClaw agent with ASR, TTS, overlay UI, and launchd background support.
+homepage: https://github.com/CarrotYuan/openclaw-voice-control
+metadata: {"openclaw":{"os":["darwin"],"homepage":"https://github.com/CarrotYuan/openclaw-voice-control","requires":{"bins":["python3","git","launchctl"],"env":["OPENCLAW_BASE_URL","OPENCLAW_TOKEN","SENSEVOICE_MODEL_PATH","SENSEVOICE_VAD_MODEL_PATH"]},"primaryEnv":"OPENCLAW_TOKEN"}}
 ---
 
 # OpenClaw Voice Control
@@ -71,6 +73,13 @@ description: Local macOS voice-control integration for OpenClaw. Use when settin
 11. 如果需要，再执行 `./scripts/deploy_macos.sh`
 12. 如果不需要，则停在前台运行方案
 
+在这条主线里，只要涉及会改本地系统状态的动作，都必须先明确告诉用户并征得确认，包括：
+
+- 把仓库拉取并同步到 skill 工作目录
+- 在仓库里执行 `pip install -e .`
+- 下载较大的本地模型或唤醒词资产
+- 开启后台常驻或 `launchd` 自启动
+
 最短命令路径：
 
 ```bash
@@ -126,6 +135,22 @@ python -m openclaw_voice_control.overlay_app --config config/default.yaml --env-
 
 除非用户明确要求，否则优先采用这条默认路线。
 
+## 默认路线的变量分层
+
+默认路线下，主要分成两类：
+
+- `.env` 中必填的主线变量
+  - `OPENCLAW_BASE_URL`
+  - `OPENCLAW_TOKEN`
+  - `SENSEVOICE_MODEL_PATH`
+  - `SENSEVOICE_VAD_MODEL_PATH`
+- 一般保留默认值、只有在用户想定制时才改的变量
+  - `WAKEWORD_PROVIDER=openwakeword`
+  - `OPENWAKEWORD_MODEL_NAME=hey jarvis`
+  - `OPENCLAW_AGENT_ID=main`
+  - `OPENCLAW_MODEL=openclaw:main`
+  - `OPENCLAW_USER=openclaw-voice-control`
+
 ## 可选 Porcupine 路线
 
 Picovoice / Porcupine 现在是可选备选方案，不是默认路线。
@@ -137,6 +162,8 @@ Picovoice / Porcupine 现在是可选备选方案，不是默认路线。
 - `WAKEWORD_PROVIDER=porcupine`
 - `PICOVOICE_ACCESS_KEY`
 - `WAKEWORD_FILE`
+
+只有在用户明确选择 Porcupine 路线时，才去要求这些变量。
 
 ## 切换 openWakeWord 唤醒词
 
@@ -181,6 +208,8 @@ Picovoice / Porcupine 现在是可选备选方案，不是默认路线。
    - 不要使用 `~/.openclaw/identity/device-auth.json` 作为这个项目的 token 来源。
 
 6. 前台验证优先，后台部署要先征求用户确认。
+   - 不要默认认为可以直接拉仓库、执行 `pip install -e .`、下载模型，或开启 `launchd` 行为。
+   - 先说明动作内容，再在用户确认后继续。
    - 前台验证指的是：从同一个已安装 skill 工作目录，同时启动语音主服务和浮窗。
    - 当前台验证成功后，再问用户是否需要后台常驻与自启动。
    - 只有用户明确需要时，才执行 `./scripts/deploy_macos.sh`。
@@ -219,18 +248,21 @@ Picovoice / Porcupine 现在是可选备选方案，不是默认路线。
 
 ## 主要配置项
 
-主要配置项有：
+默认路线必需项：
 
 - `OPENCLAW_BASE_URL`
 - `OPENCLAW_TOKEN`
+- `SENSEVOICE_MODEL_PATH`
+- `SENSEVOICE_VAD_MODEL_PATH`
+
+默认路线可配置项：
+
 - `OPENCLAW_AGENT_ID`
 - `OPENCLAW_MODEL`
 - `OPENCLAW_USER`
 - `WAKEWORD_PROVIDER`
 - `OPENWAKEWORD_MODEL_NAME`
 - `OPENWAKEWORD_MODEL_PATH`
-- `SENSEVOICE_MODEL_PATH`
-- `SENSEVOICE_VAD_MODEL_PATH`
 
 如果用户明确切换到可选 Porcupine 路线，再额外配置：
 

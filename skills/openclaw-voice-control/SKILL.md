@@ -2,7 +2,7 @@
 name: openclaw-voice-control
 description: Local macOS voice-control integration for OpenClaw. Use when setting up, deploying, troubleshooting, or operating wakeword-triggered voice access to a local OpenClaw agent with ASR, TTS, overlay UI, and launchd background support.
 homepage: https://github.com/CarrotYuan/openclaw-voice-control
-metadata: {"openclaw":{"os":["darwin"],"homepage":"https://github.com/CarrotYuan/openclaw-voice-control","requires":{"bins":["python3","git"],"env":["OPENCLAW_TOKEN"]},"primaryEnv":"OPENCLAW_TOKEN"}}
+metadata: {"openclaw":{"os":["darwin"],"homepage":"https://github.com/CarrotYuan/openclaw-voice-control","requires":{"bins":["python3","git","launchctl"],"env":["OPENCLAW_BASE_URL","OPENCLAW_TOKEN","SENSEVOICE_MODEL_PATH","SENSEVOICE_VAD_MODEL_PATH"]},"primaryEnv":"OPENCLAW_TOKEN"}}
 ---
 
 # OpenClaw Voice Control
@@ -73,6 +73,14 @@ Use this as the standard install path:
 11. if yes, run `./scripts/deploy_macos.sh`
 12. if no, stop after foreground validation
 
+Before running any system-changing step in that path, explicitly tell the user
+what you are about to do and get confirmation for:
+
+- fetching and checking out the repository into the skill workspace
+- running `pip install -e .` from the repository
+- downloading large local models or wakeword assets
+- enabling background resident behavior or launchd auto-start
+
 Minimum command path:
 
 ```bash
@@ -131,6 +139,22 @@ The default public route is:
 
 Prefer that route unless the user explicitly asks for something else.
 
+## Default Route Variables
+
+These are the main values for the default route:
+
+- required in `.env`
+  - `OPENCLAW_BASE_URL`
+  - `OPENCLAW_TOKEN`
+  - `SENSEVOICE_MODEL_PATH`
+  - `SENSEVOICE_VAD_MODEL_PATH`
+- usually left at their documented defaults unless the user wants customization
+  - `WAKEWORD_PROVIDER=openwakeword`
+  - `OPENWAKEWORD_MODEL_NAME=hey jarvis`
+  - `OPENCLAW_AGENT_ID=main`
+  - `OPENCLAW_MODEL=openclaw:main`
+  - `OPENCLAW_USER=openclaw-voice-control`
+
 ## Optional Porcupine Route
 
 Picovoice / Porcupine is an optional fallback route, not the default path.
@@ -143,6 +167,9 @@ If that route is chosen, set:
 - `WAKEWORD_PROVIDER=porcupine`
 - `PICOVOICE_ACCESS_KEY`
 - `WAKEWORD_FILE`
+
+Only ask for those Porcupine-specific values when the user explicitly chooses
+that route.
 
 ## Switching openWakeWord Models
 
@@ -187,7 +214,11 @@ When using this skill, follow these rules:
    - For this project, use the OpenClaw token from `~/.openclaw/openclaw.json`, specifically the `gateway` configuration.
    - Do not use `~/.openclaw/identity/device-auth.json` as the token source for this project.
 
-6. Ask before enabling background resident behavior.
+6. Ask before any system-changing action.
+   - Do not assume you should fetch the repository, run `pip install -e .`, download models, or enable launchd behavior without user approval.
+   - Explain the action first, then continue only after the user confirms.
+
+7. Ask before enabling background resident behavior.
    - Foreground validation comes first.
    - Foreground validation means starting both `python -m openclaw_voice_control --config config/default.yaml --env-file .env` and `python -m openclaw_voice_control.overlay_app --config config/default.yaml --env-file .env` from the same installed skill workspace.
    - Only run `./scripts/deploy_macos.sh` when the user explicitly wants background resident behavior or auto-start.
@@ -226,18 +257,21 @@ The canonical background startup path is:
 
 ## Configuration Surface
 
-Important configuration values:
+Default-route required values:
 
 - `OPENCLAW_BASE_URL`
 - `OPENCLAW_TOKEN`
+- `SENSEVOICE_MODEL_PATH`
+- `SENSEVOICE_VAD_MODEL_PATH`
+
+Default-route configurable values:
+
 - `OPENCLAW_AGENT_ID`
 - `OPENCLAW_MODEL`
 - `OPENCLAW_USER`
 - `WAKEWORD_PROVIDER`
 - `OPENWAKEWORD_MODEL_NAME`
 - `OPENWAKEWORD_MODEL_PATH`
-- `SENSEVOICE_MODEL_PATH`
-- `SENSEVOICE_VAD_MODEL_PATH`
 
 If the user explicitly switches to the optional Porcupine route, also configure:
 
