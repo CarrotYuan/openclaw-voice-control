@@ -49,7 +49,6 @@
 在一台全新的机器，或者一次全新克隆的环境里，仓库默认**不包含**下面这些东西：
 
 - `.env`
-- 真实的 `.ppn` 唤醒词文件
 - SenseVoice 模型目录
 - VAD 模型目录
 - OpenClaw 本地服务
@@ -61,10 +60,28 @@
 - Python 3.11 或更新版本
 - 一个可访问的本地 OpenClaw 服务
 - 有效的 `OPENCLAW_TOKEN`
-- 有效的 `PICOVOICE_ACCESS_KEY`
-- 一个真实的 Porcupine `.ppn` 唤醒词文件
 - macOS 麦克风权限
 - 以及按下文步骤下载本地 ASR 模型的能力
+
+当前默认路线改成了 openWakeWord，自带英文 `hey jarvis` 预训练模型。
+这条默认路线**不需要** Picovoice 账号、`PICOVOICE_ACCESS_KEY` 或本地 `.ppn`。
+
+如果你想继续使用 Porcupine，再额外准备：
+
+- 有效的 `PICOVOICE_ACCESS_KEY`
+- 一个真实的 Porcupine `.ppn` 唤醒词文件
+
+按当前默认路线，实际可以分成两类：
+
+- 必须已经由用户本地具备，或必须由用户亲自授权的
+  - 本地正在运行且可访问的 OpenClaw 服务
+  - 可用的 OpenClaw token 来源
+  - macOS 麦克风权限
+- 一般可以由 AI 或操作者按文档自动补齐的
+  - 从 `.env.example` 复制出的 `.env`
+  - SenseVoice 模型目录
+  - VAD 模型目录
+  - 首次运行时自动下载的 openWakeWord 预训练模型
 
 ## 最少必须填写的环境变量
 
@@ -72,16 +89,21 @@
 
 - `OPENCLAW_BASE_URL`
 - `OPENCLAW_TOKEN`
-- `PICOVOICE_ACCESS_KEY`
-- `WAKEWORD_FILE`
 - `SENSEVOICE_MODEL_PATH`
 - `SENSEVOICE_VAD_MODEL_PATH`
 
 公开版可直接使用的默认值有：
 
+- `WAKEWORD_PROVIDER=openwakeword`
+- `OPENWAKEWORD_MODEL_NAME=hey jarvis`
 - `OPENCLAW_AGENT_ID=main`
 - `OPENCLAW_MODEL=openclaw:main`
 - `OPENCLAW_USER=openclaw-voice-control`
+
+只有在可选的 Porcupine 路线下，才需要再填写：
+
+- `PICOVOICE_ACCESS_KEY`
+- `WAKEWORD_FILE`
 
 以下变量仍然保留，但只是排障用，不是主方案：
 
@@ -94,14 +116,12 @@
 
 建议在全新克隆后，把本地资源按下面的结构放置：
 
-- 唤醒词：
-  `assets/wakeword/your-model.ppn`
 - SenseVoice：
   `models/SenseVoiceSmall`
 - VAD：
   `models/fsmn-vad`
 
-注意：
+如果你使用可选的 Porcupine 路线，建议唤醒词文件使用：
 
 - `assets/wakeword/your-model.ppn` 只是占位路径
 - 仓库本身**不提供**真实 `.ppn`
@@ -112,10 +132,10 @@
   使用你本地 OpenClaw 服务暴露出的地址
 - `OPENCLAW_TOKEN`
   使用你本地 OpenClaw 环境中的有效 token。对这个项目，优先从 `~/.openclaw/openclaw.json` 的 `gateway` 配置获取，而不是从设备身份文件里读取
-- `PICOVOICE_ACCESS_KEY`
-  从 [Picovoice Console](https://picovoice.ai/) 获取
-- `WAKEWORD_FILE`
-  从 [Picovoice Console](https://picovoice.ai/) 获取或训练你自己的 `.ppn`
+- 默认唤醒词路线
+  使用 openWakeWord 自带的英文 `hey jarvis` 预训练模型，不需要 Picovoice key，也不需要 `.ppn`
+- 可选 Porcupine 路线
+  从 [Picovoice Console](https://picovoice.ai/) 获取 `PICOVOICE_ACCESS_KEY`，并准备你自己的 `.ppn`
 - `SENSEVOICE_MODEL_PATH`
   指向本地 SenseVoiceSmall 目录
 - `SENSEVOICE_VAD_MODEL_PATH`
@@ -163,14 +183,35 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-### 5. 填写 `.env`
+### 5. 下载本地 ASR 模型目录
+
+SenseVoice：
+
+```bash
+./.venv/bin/modelscope download --model iic/SenseVoiceSmall --local_dir models/SenseVoiceSmall
+```
+
+VAD：
+
+```bash
+./.venv/bin/python - <<'PY'
+from funasr import AutoModel
+AutoModel(model='fsmn-vad', disable_update=True)
+PY
+```
+
+如果你希望模型最终落在仓库内的标准路径下，请把解析出的 VAD 模型复制或链接到：
+
+```text
+models/fsmn-vad
+```
+
+### 6. 填写 `.env`
 
 至少填写：
 
 - `OPENCLAW_BASE_URL`
 - `OPENCLAW_TOKEN`
-- `PICOVOICE_ACCESS_KEY`
-- `WAKEWORD_FILE`
 - `SENSEVOICE_MODEL_PATH`
 - `SENSEVOICE_VAD_MODEL_PATH`
 
@@ -179,13 +220,58 @@ cp .env.example .env
 ```bash
 OPENCLAW_BASE_URL=http://127.0.0.1:18789/v1/chat/completions
 OPENCLAW_TOKEN=replace_me
-PICOVOICE_ACCESS_KEY=replace_me
+WAKEWORD_PROVIDER=openwakeword
+OPENWAKEWORD_MODEL_NAME=hey jarvis
+OPENWAKEWORD_MODEL_PATH=
+PICOVOICE_ACCESS_KEY=
 WAKEWORD_FILE=assets/wakeword/your-model.ppn
 SENSEVOICE_MODEL_PATH=models/SenseVoiceSmall
 SENSEVOICE_VAD_MODEL_PATH=models/fsmn-vad
 ```
 
-### 6. 准备唤醒词 `.ppn`
+### 7. 准备唤醒词方案
+
+#### 默认路线：openWakeWord `hey jarvis`
+
+默认路线不需要额外准备唤醒词模型文件。
+
+使用：
+
+```text
+WAKEWORD_PROVIDER=openwakeword
+OPENWAKEWORD_MODEL_NAME=hey jarvis
+```
+
+首次启动时，openWakeWord 会自动下载官方提供的 `hey jarvis` 预训练模型，并使用内置的英文 `hey jarvis` 唤醒词。
+
+唤醒阈值已经在仓库默认配置里设好，只有在排查“反复触发”或“难以触发”时，才需要额外调整。
+
+如果你想切换到别的官方 openWakeWord 预训练唤醒词，只需要改：
+
+```text
+OPENWAKEWORD_MODEL_NAME=hey mycroft
+```
+
+当前更适合作为通用唤醒词的官方预训练名称包括：
+
+- `hey jarvis`
+- `hey mycroft`
+- `hey rhasspy`
+- `alexa`
+
+选中的预训练模型会在首次使用时自动下载。
+
+当前代码已经支持通过修改 `OPENWAKEWORD_MODEL_NAME` 切换这些官方预训练名称，但目前在这个仓库里真正做过 smoke test 的仍然只有默认的 `hey jarvis` 路线。
+
+#### 可选路线：Picovoice Porcupine
+
+如果你想继续使用 `.ppn`，再切换到：
+
+```text
+WAKEWORD_PROVIDER=porcupine
+PICOVOICE_ACCESS_KEY=...
+WAKEWORD_FILE=assets/wakeword/your-model.ppn
+```
 
 把你自己的真实 `.ppn` 文件放到 `.env` 指向的位置。
 
@@ -408,6 +494,8 @@ python -m openclaw_voice_control.overlay_app --config config/default.yaml --env-
 - `config/default.yaml` 负责音频、ASR、TTS、wakeword、overlay 默认值
 - `config.py` 负责配置合并逻辑
 
+也就是说，像 openWakeWord 阈值、回合结束后的重新武装时间这类 wakeword 调参项，通常应优先改 `config/default.yaml`，而不是放进 `.env`。
+
 ## TTS 配置
 
 项目目前使用 macOS `say` 做播报。
@@ -450,11 +538,10 @@ say -v '?'
 这是预期行为。公开仓库不会附带：
 
 - `.env`
-- 真实 `.ppn`
 - `models/SenseVoiceSmall`
 - `models/fsmn-vad`
 
-需要你自己补齐。
+默认 openWakeWord 路线不需要额外 `.ppn`。如果你使用 Porcupine 路线，则还需要自己准备真实 `.ppn`。
 
 ### `.ppn` 示例路径看起来像真实文件
 
@@ -465,6 +552,18 @@ assets/wakeword/your-model.ppn
 ```
 
 它只是占位，不是仓库自带资产。
+
+### openWakeWord 唤醒后在安静环境里不断重复触发
+
+如果默认的 `hey jarvis` 路线可以成功唤醒，但在你不继续说话时每隔几秒又会再次触发，通常说明当前麦克风/环境下的 openWakeWord 阈值太低。
+
+可以先把：
+
+```text
+OPENWAKEWORD_THRESHOLD=0.75
+```
+
+如果还不稳定，再在 `0.65` 到 `0.85` 之间逐步调高，直到误触发停止，同时正常唤醒仍然可用。
 
 ### `pip install -e .` 因 SSL 失败
 
@@ -541,7 +640,8 @@ assets/wakeword/your-model.ppn
 - 仅支持 macOS
 - 默认中文 ASR
 - 仓库不处理唤醒词资产再分发
-- 用户仍需自己准备 `.ppn`、OpenClaw 凭据和 ASR 模型目录
+- 用户仍需自己准备 OpenClaw 凭据和 ASR 模型目录
+- 只有选择可选的 Porcupine 路线时，才需要自己准备 `.ppn`
 
 ## 相关文档
 

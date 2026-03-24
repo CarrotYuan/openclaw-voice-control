@@ -49,9 +49,13 @@ class AudioConfig:
 @dataclass(slots=True)
 class WakewordConfig:
     provider: str
-    keyword_path: Path
+    keyword_path: Path | None
     access_key: str
+    model_name: str
+    model_path: Path | None
+    threshold: float
     cooldown_seconds: float
+    rearm_seconds_after_turn: float
 
 
 @dataclass(slots=True)
@@ -179,6 +183,17 @@ def _env_or_optional_path(env_key: str, base_dir: Path, configured_value: Any) -
     return None
 
 
+def _float_env_or_config(env_key: str, configured_value: Any, default: float) -> float:
+    env_value = os.getenv(env_key)
+    if env_value:
+        return float(env_value)
+
+    if configured_value is not None:
+        return float(configured_value)
+
+    return float(default)
+
+
 def default_config_path() -> Path:
     env_path = os.getenv("VOICE_CONTROL_CONFIG")
     if env_path:
@@ -238,15 +253,34 @@ def load_config(config_path: str | Path | None = None, env_path: str | Path | No
             max_pending_blocks=int(audio.get("max_pending_blocks", 10)),
         ),
         wakeword=WakewordConfig(
-            provider=wakeword.get("provider", "porcupine"),
-            keyword_path=_env_or_path(
+            provider=_env_or_config("WAKEWORD_PROVIDER", wakeword.get("provider"), "openwakeword"),
+            keyword_path=_env_or_optional_path(
                 "WAKEWORD_FILE",
                 base_dir,
                 wakeword.get("keyword_path"),
-                "assets/wakeword/hey-jarvis_en_mac_v4_0_0.ppn",
             ),
             access_key=os.getenv("PICOVOICE_ACCESS_KEY", wakeword.get("access_key", "")),
+            model_name=_env_or_config(
+                "OPENWAKEWORD_MODEL_NAME",
+                wakeword.get("model_name"),
+                "hey jarvis",
+            ),
+            model_path=_env_or_optional_path(
+                "OPENWAKEWORD_MODEL_PATH",
+                base_dir,
+                wakeword.get("model_path"),
+            ),
+            threshold=_float_env_or_config(
+                "OPENWAKEWORD_THRESHOLD",
+                wakeword.get("threshold"),
+                0.65,
+            ),
             cooldown_seconds=float(wakeword.get("cooldown_seconds", 1.5)),
+            rearm_seconds_after_turn=_float_env_or_config(
+                "WAKEWORD_REARM_SECONDS_AFTER_TURN",
+                wakeword.get("rearm_seconds_after_turn"),
+                2.0,
+            ),
         ),
         tts=TTSConfig(
             engine=tts.get("engine", "macos_say"),

@@ -41,18 +41,26 @@ It is written to cover the full path from:
 The goal is that a human operator or another AI can follow this section alone and
 get the repository running without having to guess hidden setup steps.
 
-## What You Must Prepare Yourself
+## What Must Exist Before Setup
 
-Before this repository can work on a new machine, prepare all of the following:
+Before this repository can work on a new machine, make sure all of the following
+exist locally or can be provided during setup:
 
 - a macOS machine
 - Python 3.11 or newer
 - a local OpenClaw service that is already running and reachable
 - an OpenClaw token
-- a Picovoice AccessKey
-- a real `.ppn` wakeword file
 - microphone permission on macOS
 - a way to download the local ASR model files described below
+
+By default, the repository now uses openWakeWord with the built-in English
+`hey jarvis` model. That default route does not require a Picovoice account,
+an access key, or a local `.ppn` file.
+
+If you prefer the older Porcupine route, prepare these extra items as well:
+
+- a Picovoice AccessKey
+- a real `.ppn` wakeword file
 
 The repository does not bundle:
 
@@ -66,22 +74,39 @@ That is intentional. A fresh clone is expected to stay incomplete until those
 local assets and secrets are provided or downloaded through the documented
 setup steps.
 
+For the current default route, the practical split is:
+
+- items that must already exist locally or be granted by the user
+  - a running local OpenClaw service
+  - a valid local OpenClaw token source
+  - macOS microphone permission
+- items that another AI or operator can usually fetch or populate automatically
+  - `.env` created from `.env.example`
+  - SenseVoice model files
+  - VAD model files
+  - the selected openWakeWord pretrained wakeword model on first run
+
 ## Required Variables
 
 At minimum, these values must be set in `.env`:
 
 - `OPENCLAW_BASE_URL`
 - `OPENCLAW_TOKEN`
-- `PICOVOICE_ACCESS_KEY`
-- `WAKEWORD_FILE`
 - `SENSEVOICE_MODEL_PATH`
 - `SENSEVOICE_VAD_MODEL_PATH`
 
 These have usable public defaults unless you want to customize them:
 
+- `WAKEWORD_PROVIDER=openwakeword`
+- `OPENWAKEWORD_MODEL_NAME=hey jarvis`
 - `OPENCLAW_AGENT_ID=main`
 - `OPENCLAW_MODEL=openclaw:main`
 - `OPENCLAW_USER=openclaw-voice-control`
+
+Only the optional Porcupine route needs these additional variables:
+
+- `PICOVOICE_ACCESS_KEY`
+- `WAKEWORD_FILE`
 
 Optional troubleshooting variables:
 
@@ -96,18 +121,16 @@ recommended background path is the project-owned host app launcher built by
 
 The cleanest layout on a fresh clone is:
 
-- wakeword file:
-  `assets/wakeword/your-model.ppn`
 - SenseVoice model directory:
   `models/SenseVoiceSmall`
 - VAD model directory:
   `models/fsmn-vad`
 
-The repository uses the placeholder path:
+If you use the optional Porcupine route, the recommended wakeword file path is:
 
 - `assets/wakeword/your-model.ppn`
 
-This is only an example. The repository does not ship that file.
+That path is only a placeholder. The repository does not ship a real `.ppn`.
 
 ## Where To Get Each Requirement
 
@@ -117,12 +140,13 @@ This is only an example. The repository does not ship that file.
   Use a valid token from your OpenClaw setup. For this project, prefer the
   `gateway` configuration in `~/.openclaw/openclaw.json` rather than reading it
   from device identity files.
-- `PICOVOICE_ACCESS_KEY`
-  Create a free account in the [Picovoice Console](https://picovoice.ai/) and
-  copy your AccessKey.
-- `WAKEWORD_FILE`
-  Create or download your own Porcupine `.ppn` file from the
-  [Picovoice Console](https://picovoice.ai/).
+- default wakeword route
+  Use openWakeWord with the built-in `hey jarvis` model. No Picovoice key or
+  `.ppn` file is required for the default route.
+- optional Porcupine wakeword route
+  Create a free account in the [Picovoice Console](https://picovoice.ai/), copy
+  your `PICOVOICE_ACCESS_KEY`, and create or download your own `.ppn` file for
+  `WAKEWORD_FILE`.
 - `SENSEVOICE_MODEL_PATH`
   Point this at a local SenseVoiceSmall model directory.
 - `SENSEVOICE_VAD_MODEL_PATH`
@@ -200,14 +224,36 @@ If that happens, retry with:
 cp .env.example .env
 ```
 
-### 5. Fill in `.env`
+### 5. Download the local ASR model directories
+
+SenseVoice:
+
+```bash
+./.venv/bin/modelscope download --model iic/SenseVoiceSmall --local_dir models/SenseVoiceSmall
+```
+
+VAD:
+
+```bash
+./.venv/bin/python - <<'PY'
+from funasr import AutoModel
+AutoModel(model='fsmn-vad', disable_update=True)
+PY
+```
+
+If you want the repository-local layout, copy or link the resolved VAD model
+into:
+
+```text
+models/fsmn-vad
+```
+
+### 6. Fill in `.env`
 
 At minimum, fill:
 
 - `OPENCLAW_BASE_URL`
 - `OPENCLAW_TOKEN`
-- `PICOVOICE_ACCESS_KEY`
-- `WAKEWORD_FILE`
 - `SENSEVOICE_MODEL_PATH`
 - `SENSEVOICE_VAD_MODEL_PATH`
 
@@ -216,13 +262,61 @@ Example repository-local asset layout:
 ```bash
 OPENCLAW_BASE_URL=http://127.0.0.1:18789/v1/chat/completions
 OPENCLAW_TOKEN=replace_me
-PICOVOICE_ACCESS_KEY=replace_me
+WAKEWORD_PROVIDER=openwakeword
+OPENWAKEWORD_MODEL_NAME=hey jarvis
+OPENWAKEWORD_MODEL_PATH=
+PICOVOICE_ACCESS_KEY=
 WAKEWORD_FILE=assets/wakeword/your-model.ppn
 SENSEVOICE_MODEL_PATH=models/SenseVoiceSmall
 SENSEVOICE_VAD_MODEL_PATH=models/fsmn-vad
 ```
 
-### 6. Prepare the wakeword file
+### 7. Prepare the wakeword provider
+
+#### Default route: openWakeWord `hey jarvis`
+
+No extra wakeword asset is required for the default route.
+
+Use:
+
+```text
+WAKEWORD_PROVIDER=openwakeword
+OPENWAKEWORD_MODEL_NAME=hey jarvis
+```
+
+On first run, openWakeWord will download the official pretrained `hey jarvis`
+model set automatically and use that bundled English wakeword.
+
+The wakeword threshold is already set in the repository configuration. Only
+change it when troubleshooting retriggering or missed wakeups.
+
+To switch to another official openWakeWord pretrained wakeword, change:
+
+```text
+OPENWAKEWORD_MODEL_NAME=hey mycroft
+```
+
+Common official pretrained examples include:
+
+- `hey jarvis`
+- `hey mycroft`
+- `hey rhasspy`
+- `alexa`
+
+The selected pretrained model is downloaded automatically on first use.
+
+The code path already supports changing `OPENWAKEWORD_MODEL_NAME`, but only the
+default `hey jarvis` route has been smoke-tested in this repository so far.
+
+#### Optional route: Picovoice Porcupine
+
+If you want to keep using a custom `.ppn`, switch to:
+
+```text
+WAKEWORD_PROVIDER=porcupine
+PICOVOICE_ACCESS_KEY=...
+WAKEWORD_FILE=assets/wakeword/your-model.ppn
+```
 
 Put your real `.ppn` file at the path you referenced in `.env`.
 
@@ -317,7 +411,7 @@ This proves:
 
 - package install is usable
 - config loading is working
-- local model paths and `.ppn` path are valid
+- local model paths and wakeword provider configuration are valid
 
 ### 11. Test the overlay in the foreground
 
@@ -472,6 +566,10 @@ In practice:
 - change audio, TTS, ASR, wakeword, and overlay defaults in `config/default.yaml`
 - only edit `config.py` if you are changing configuration behavior itself
 
+That means wakeword tuning values such as the openWakeWord threshold or the
+post-turn rearm timing should normally be adjusted in `config/default.yaml`,
+not added to `.env` unless you are debugging a specific machine.
+
 ## TTS Configuration
 
 This project currently uses macOS `say` for reply playback.
@@ -534,14 +632,22 @@ If you want the assistant to keep spoken replies but disable the extra beeps, se
 
 ## Wakeword Note
 
-This project uses Picovoice Porcupine for wakeword detection.
+This project now defaults to openWakeWord with the built-in English
+`hey jarvis` model.
 
-Users typically need both:
+That default route does not require:
+
+- a Picovoice `AccessKey`
+- a local `.ppn` wakeword model file
+
+If you prefer the optional Porcupine route, users typically need both:
 
 - a Picovoice `AccessKey`
 - a `.ppn` wakeword model file
 
-The `.ppn` file used on your own machine can come from the free Picovoice Console workflow, but this repository should not assume redistribution rights for a custom wakeword file. The safest public setup is:
+The `.ppn` file used on your own machine can come from the free Picovoice
+Console workflow, but this repository should not assume redistribution rights
+for a custom wakeword file. The safest public setup is:
 
 - do not commit your real `.ppn` file
 - tell users to generate or download their own
@@ -561,6 +667,10 @@ Users can change these without touching the main service code:
 - OpenClaw agent id
 - OpenClaw model
 - OpenClaw user id
+- wakeword provider
+- openWakeWord model name
+- openWakeWord model path
+- openWakeWord threshold
 - Picovoice AccessKey
 - wakeword `.ppn` file path
 - ASR model name
@@ -590,6 +700,8 @@ Retry with:
 
 ### The service starts but cannot find the wakeword file
 
+This only applies when `WAKEWORD_PROVIDER=porcupine`.
+
 Check that `WAKEWORD_FILE` in `.env` points to a real local `.ppn`.
 
 The repository placeholder:
@@ -599,6 +711,21 @@ assets/wakeword/your-model.ppn
 ```
 
 is not a bundled asset.
+
+### openWakeWord keeps retriggering even when nobody continues speaking
+
+If the default `hey jarvis` route wakes successfully but then keeps retriggering
+every few seconds when the room is otherwise quiet, the openWakeWord threshold
+is too low for that microphone/environment combination.
+
+Raise:
+
+```text
+OPENWAKEWORD_THRESHOLD=0.75
+```
+
+If needed, try values in the `0.65` to `0.85` range until false triggers stop
+while normal wakeword use still works.
 
 ### `fsmn-vad` download does not work directly
 
@@ -798,7 +925,8 @@ Resolution:
 - macOS only
 - Chinese ASR by default
 - wakeword asset redistribution is not handled by this repository
-- users still need to provide their own local `.ppn`, OpenClaw credentials, and ASR model directories
+- users still need to provide OpenClaw credentials and ASR model directories
+- users only need their own local `.ppn` if they choose the optional Porcupine route
 
 ## Related Docs
 

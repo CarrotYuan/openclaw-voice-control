@@ -19,7 +19,7 @@ from .openclaw_client import OpenClawClient
 from .state import OverlayStateManager
 from .text import clean_text_for_overlay
 from .tts import MacOSTTS
-from .wakeword import PorcupineWakewordEngine
+from .wakeword import build_wakeword_engine
 
 
 class VoiceControlService:
@@ -32,8 +32,39 @@ class VoiceControlService:
         self.client = OpenClawClient(config.openclaw)
         self.tts = MacOSTTS(config.tts, config.overlay)
         self.asr = FunASRSenseVoice(config.asr)
-        self.wakeword = PorcupineWakewordEngine(config.wakeword)
+        self.wakeword = build_wakeword_engine(config.wakeword)
         self.state = OverlayStateManager(config.overlay)
+
+    def _start_wakeword_engine(self) -> None:
+        self.logger.info("Initializing wakeword engine...")
+        self.wakeword.start()
+        if self.config.wakeword.provider.strip().lower() == "openwakeword":
+            self.logger.info(
+                "Wakeword engine ready | provider=%s model_name=%s model_path=%s threshold=%.2f",
+                self.config.wakeword.provider,
+                self.config.wakeword.model_name,
+                self.config.wakeword.model_path,
+                self.config.wakeword.threshold,
+            )
+        else:
+            self.logger.info(
+                "Wakeword engine ready | provider=%s keyword_path=%s",
+                self.config.wakeword.provider,
+                self.config.wakeword.keyword_path,
+            )
+
+    def _restart_wakeword_engine(self) -> None:
+        try:
+            self.wakeword.close()
+        except Exception:
+            self.logger.exception("Failed to close wakeword engine before restart")
+        self._start_wakeword_engine()
+
+    def _return_to_idle(self, auto_hide_ms: int = 200, clear_stop_flag: bool = False) -> None:
+        self._restart_wakeword_engine()
+        self.update_overlay_state("idle", auto_hide_ms=auto_hide_ms)
+        if clear_stop_flag:
+            self.tts.clear_stop_flag()
 
     def _build_logger(self) -> logging.Logger:
         logger = logging.getLogger("openclaw.voice_control")
@@ -230,24 +261,27 @@ class VoiceControlService:
         self.logger.info("Loading ASR model...")
         self.asr.load()
         self.logger.info("ASR model ready")
-        self.logger.info("Initializing wakeword engine...")
-        self.wakeword.start()
-        self.logger.info("Wakeword engine ready | keyword_path=%s", self.config.wakeword.keyword_path)
+        self._start_wakeword_engine()
         self.tts.clear_stop_flag()
         self.state.ensure_idle_state(reset=True)
         self.update_overlay_state("idle", auto_hide_ms=200)
         self.logger.info("Entered idle listening loop")
 
-        last_trigger_time = 0.0
+        next_allowed_trigger_time = 0.0
+
+        def extend_rearm(seconds: float) -> None:
+            nonlocal next_allowed_trigger_time
+            next_allowed_trigger_time = max(next_allowed_trigger_time, time.time() + seconds)
+
         while True:
             _, keyword_index = self.wakeword.read()
             if keyword_index < 0:
                 continue
 
             now = time.time()
-            if now - last_trigger_time < self.config.wakeword.cooldown_seconds:
+            if now < next_allowed_trigger_time:
                 continue
-            last_trigger_time = now
+            next_allowed_trigger_time = now + self.config.wakeword.cooldown_seconds
             self.logger.info("Wakeword detected")
 
             self.update_overlay_state("wake", meta_text="已唤醒", auto_hide_ms=1800)
@@ -257,20 +291,23 @@ class VoiceControlService:
                 self.tts.clear_stop_flag()
                 continue
 
+            self.wakeword.close()
             wav_path = self.record_until_silence()
             if not wav_path:
-                self.update_overlay_state("idle", auto_hide_ms=200)
-                self.tts.clear_stop_flag()
+                extend_rearm(self.config.wakeword.rearm_seconds_after_turn)
+                self._return_to_idle(auto_hide_ms=200, clear_stop_flag=True)
                 continue
 
             success = self.handle_one_turn(wav_path)
             if not success:
+                extend_rearm(self.config.wakeword.rearm_seconds_after_turn)
+                self._return_to_idle(auto_hide_ms=120)
                 continue
 
             while True:
                 if self.tts.is_stop_requested():
-                    self.update_overlay_state("idle", auto_hide_ms=120)
-                    self.tts.clear_stop_flag()
+                    extend_rearm(self.config.wakeword.rearm_seconds_after_turn)
+                    self._return_to_idle(auto_hide_ms=120, clear_stop_flag=True)
                     break
 
                 if self.config.tts.followup_beep_enabled:
@@ -278,8 +315,13 @@ class VoiceControlService:
 
                 followup_wav = self.record_until_silence()
                 if not followup_wav:
-                    self.update_overlay_state("idle", auto_hide_ms=200)
+                    extend_rearm(self.config.wakeword.rearm_seconds_after_turn)
+                    self._return_to_idle(auto_hide_ms=200)
                     break
 
                 if not self.handle_one_turn(followup_wav):
+                    extend_rearm(self.config.wakeword.rearm_seconds_after_turn)
+                    self._return_to_idle(auto_hide_ms=120)
                     break
+
+                extend_rearm(self.config.wakeword.rearm_seconds_after_turn)

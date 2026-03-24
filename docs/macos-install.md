@@ -7,8 +7,9 @@ This first public rewrite is intentionally limited to macOS.
 - macOS
 - OpenClaw running locally and reachable
 - microphone permission granted
-- a valid Picovoice access key
-- a wakeword model you are allowed to use locally
+- a wakeword route
+  - default: openWakeWord with the built-in English `hey jarvis` model
+  - optional: Picovoice Porcupine with your own `AccessKey` and `.ppn`
 
 ## Quick Start
 
@@ -44,13 +45,28 @@ For a clean new-environment setup, prepare explicit local model directories:
 
 Then point the config or `.env` at those directories.
 
-For wakeword, prefer a repository-local path or another explicit local path:
+For the default wakeword route, use:
 
+- `WAKEWORD_PROVIDER=openwakeword`
+- `OPENWAKEWORD_MODEL_NAME=hey jarvis`
+
+That default route does not require a Picovoice key or a local `.ppn`.
+The remaining local model files can normally be downloaded by the operator or
+another AI during setup.
+
+If you prefer the optional Porcupine route, use:
+
+- `WAKEWORD_PROVIDER=porcupine`
 - `WAKEWORD_FILE=assets/wakeword/your-model.ppn`
 - or `WAKEWORD_FILE=/absolute/path/to/your-model.ppn`
 
 The repository does not include a real `.ppn` file. You must provide your own local
-wakeword asset.
+wakeword asset if you choose Porcupine.
+
+To switch to another official openWakeWord pretrained wakeword, change
+`OPENWAKEWORD_MODEL_NAME`. Common examples include `hey jarvis`,
+`hey mycroft`, `hey rhasspy`, and `alexa`. The selected pretrained model will
+be downloaded automatically on first use.
 
 For VAD, remember that the config alias `fsmn-vad` is a FunASR alias, not a direct
 ModelScope repository id. Fresh-clone validation found that a direct command such

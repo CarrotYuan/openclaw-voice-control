@@ -25,9 +25,13 @@ audio:
   max_pending_blocks: 10
 
 wakeword:
-  provider: porcupine
-  keyword_path: assets/wakeword/your-model.ppn
+  provider: openwakeword
+  model_name: hey jarvis
+  model_path:
+  keyword_path:
+  threshold: 0.65
   cooldown_seconds: 1.5
+  rearm_seconds_after_turn: 2.0
 
 tts:
   engine: macos_say
