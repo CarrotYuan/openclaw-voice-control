@@ -54,7 +54,6 @@ class MacOSTTS:
         if not speak_text.strip():
             return True
 
-        self.clear_stop_flag()
         self.stop_current_speech()
 
         proc = subprocess.Popen(
@@ -76,7 +75,7 @@ class MacOSTTS:
                 self.stop_current_speech()
                 self.clear_stop_flag()
                 return False
-            time.sleep(0.05)
+            time.sleep(0.01)
 
     def play_sound_async(self, sound_path: str) -> None:
         if not sound_path or not os.path.exists(sound_path):

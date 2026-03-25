@@ -61,7 +61,6 @@ class VoiceControlService:
         self._start_wakeword_engine()
 
     def _return_to_idle(self, auto_hide_ms: int = 200, clear_stop_flag: bool = False) -> None:
-        self._restart_wakeword_engine()
         self.update_overlay_state("idle", auto_hide_ms=auto_hide_ms)
         if clear_stop_flag:
             self.tts.clear_stop_flag()
@@ -113,7 +112,17 @@ class VoiceControlService:
         chunk /= 32768.0
         return float((chunk * chunk).mean() ** 0.5)
 
-    def record_until_silence(self) -> Optional[str]:
+    def _build_record_stream(self, block_size: int) -> sd.InputStream:
+        audio = self.config.audio
+        return sd.InputStream(
+            samplerate=audio.sample_rate,
+            channels=audio.channels,
+            device=audio.input_device_index if audio.input_device_index >= 0 else None,
+            dtype="int16",
+            blocksize=block_size,
+        )
+
+    def record_until_silence(self, prepared_stream: sd.InputStream | None = None) -> Optional[str]:
         audio = self.config.audio
         self.logger.info("Start listening")
         self.update_overlay_state("listening", meta_text="请开始说话", auto_hide_ms=0)
@@ -129,13 +138,7 @@ class VoiceControlService:
 
         block_duration = 0.1
         block_size = int(audio.sample_rate * block_duration)
-        stream = sd.InputStream(
-            samplerate=audio.sample_rate,
-            channels=audio.channels,
-            device=audio.input_device_index if audio.input_device_index >= 0 else None,
-            dtype="int16",
-            blocksize=block_size,
-        )
+        stream = prepared_stream or self._build_record_stream(block_size)
 
         try:
             stream.start()
@@ -218,6 +221,9 @@ class VoiceControlService:
             self.update_overlay_state("thinking", user_text=user_text, meta_text="正在思考", auto_hide_ms=0)
 
             reply = self.client.ask(user_text)
+            if self.tts.is_stop_requested():
+                self.update_overlay_state("idle", auto_hide_ms=120)
+                return False
             reply_clean = clean_text_for_overlay(reply)
             self.update_overlay_state("reply", user_text=user_text, reply_text=reply_clean, meta_text="Jarvis", auto_hide_ms=0)
 
@@ -268,6 +274,7 @@ class VoiceControlService:
         self.logger.info("Entered idle listening loop")
 
         next_allowed_trigger_time = 0.0
+        wakeword_armed = True
 
         def extend_rearm(seconds: float) -> None:
             nonlocal next_allowed_trigger_time
@@ -275,6 +282,8 @@ class VoiceControlService:
 
         while True:
             _, keyword_index = self.wakeword.read()
+            if not wakeword_armed:
+                continue
             if keyword_index < 0:
                 continue
 
@@ -282,31 +291,55 @@ class VoiceControlService:
             if now < next_allowed_trigger_time:
                 continue
             next_allowed_trigger_time = now + self.config.wakeword.cooldown_seconds
+            wakeword_armed = False
             self.logger.info("Wakeword detected")
 
             self.update_overlay_state("wake", meta_text="已唤醒", auto_hide_ms=1800)
+            self.tts.clear_stop_flag()
             wake_ok = self.tts.speak(self.config.tts.wake_ack, clean_markdown=False)
             if not wake_ok or self.tts.is_stop_requested():
+                wakeword_armed = True
                 self.update_overlay_state("idle", auto_hide_ms=120)
                 self.tts.clear_stop_flag()
                 continue
 
-            self.wakeword.close()
-            wav_path = self.record_until_silence()
+            block_size = int(self.config.audio.sample_rate * 0.1)
+            prepared_stream = self._build_record_stream(block_size)
+            wav_path: Optional[str] = None
+            try:
+                self.wakeword.close()
+                prepared_stream.start()
+                wav_path = self.record_until_silence(prepared_stream=prepared_stream)
+            except Exception:
+                self.logger.exception("Failed to hand off from wakeword listening to recording")
+                try:
+                    prepared_stream.stop()
+                    prepared_stream.close()
+                except Exception:
+                    self.logger.exception("Failed to close prepared recording stream after handoff failure")
+                self._start_wakeword_engine()
+                self.update_overlay_state("no_speech", meta_text="录音启动失败", auto_hide_ms=2200)
+                continue
             if not wav_path:
                 extend_rearm(self.config.wakeword.rearm_seconds_after_turn)
+                wakeword_armed = True
+                self._start_wakeword_engine()
                 self._return_to_idle(auto_hide_ms=200, clear_stop_flag=True)
                 continue
 
             success = self.handle_one_turn(wav_path)
             if not success:
                 extend_rearm(self.config.wakeword.rearm_seconds_after_turn)
+                wakeword_armed = True
+                self._start_wakeword_engine()
                 self._return_to_idle(auto_hide_ms=120)
                 continue
 
             while True:
                 if self.tts.is_stop_requested():
                     extend_rearm(self.config.wakeword.rearm_seconds_after_turn)
+                    wakeword_armed = True
+                    self._start_wakeword_engine()
                     self._return_to_idle(auto_hide_ms=120, clear_stop_flag=True)
                     break
 
@@ -316,12 +349,18 @@ class VoiceControlService:
                 followup_wav = self.record_until_silence()
                 if not followup_wav:
                     extend_rearm(self.config.wakeword.rearm_seconds_after_turn)
+                    wakeword_armed = True
+                    self._start_wakeword_engine()
                     self._return_to_idle(auto_hide_ms=200)
                     break
 
                 if not self.handle_one_turn(followup_wav):
                     extend_rearm(self.config.wakeword.rearm_seconds_after_turn)
+                    wakeword_armed = True
+                    self._start_wakeword_engine()
                     self._return_to_idle(auto_hide_ms=120)
                     break
 
                 extend_rearm(self.config.wakeword.rearm_seconds_after_turn)
+            else:
+                continue
