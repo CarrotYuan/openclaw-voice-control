@@ -167,6 +167,16 @@ These are the main values for the default route:
   - `OPENCLAW_MODEL=openclaw:main`
   - `OPENCLAW_USER=openclaw-voice-control`
 
+If the user changes the macOS TTS voice, first make sure that voice has been
+downloaded in:
+
+- System Settings
+- Accessibility
+- Spoken Content
+- the `i` button next to System Voice
+- Language
+- Voice
+
 ## Optional Porcupine Route
 
 Picovoice / Porcupine is an optional fallback route, not the default path.

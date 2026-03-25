@@ -284,7 +284,7 @@ def load_config(config_path: str | Path | None = None, env_path: str | Path | No
         ),
         tts=TTSConfig(
             engine=tts.get("engine", "macos_say"),
-            voice=tts.get("voice", "Yue"),
+            voice=tts.get("voice", "Tingting"),
             wake_ack=tts.get("wake_ack", "我在"),
             followup_beep_enabled=bool(tts.get("followup_beep_enabled", True)),
             followup_beep_sound=tts.get("followup_beep_sound", "/System/Library/Sounds/Glass.aiff"),

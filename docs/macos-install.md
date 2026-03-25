@@ -195,6 +195,15 @@ chmod +x scripts/*.sh
 
 This command also builds the host launcher apps before install.
 
+If you change the macOS TTS voice, first download that voice in:
+
+- System Settings
+- Accessibility
+- Spoken Content
+- the `i` button next to System Voice
+- Language
+- Voice
+
 ## One-Click Remove
 
 ```bash

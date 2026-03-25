@@ -607,7 +607,7 @@ The main TTS settings live in:
 The most important fields are:
 
 - `tts.voice`
-  Controls which macOS voice is used for spoken replies. The current default is `Yue`.
+  Controls which macOS voice is used for spoken replies. The current default is `Tingting`.
 - `tts.wake_ack`
   Controls the short spoken acknowledgement after wakeword detection, for example `我在`.
 - `tts.followup_beep_enabled`
@@ -639,10 +639,22 @@ To see the voices available on your own Mac, run:
 say -v '?'
 ```
 
+If you change the speaking voice, first download that voice in macOS:
+
+- System Settings
+- Accessibility
+- Spoken Content
+- the `i` button next to System Voice
+- Language
+- Voice
+
+If the target voice has not been downloaded there first, `say` may fail or fall
+back to a different installed voice.
+
 You can then replace `tts.voice` with any voice name returned by that command. For example:
 
-- `Yue`
 - `Tingting`
+- `Yue`
 - `Sinji`
 - `Meijia`
 

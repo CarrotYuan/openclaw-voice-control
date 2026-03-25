@@ -161,6 +161,15 @@ python -m openclaw_voice_control.overlay_app --config config/default.yaml --env-
   - `OPENCLAW_MODEL=openclaw:main`
   - `OPENCLAW_USER=openclaw-voice-control`
 
+如果要切换 macOS TTS 播报音色，先确保目标语音已经在这里下载好：
+
+- 系统设置
+- 辅助功能
+- 朗读内容
+- 系统声音旁边的 `i` 按钮
+- 语言
+- 声音
+
 ## 可选 Porcupine 路线
 
 Picovoice / Porcupine 现在是可选备选方案，不是默认路线。

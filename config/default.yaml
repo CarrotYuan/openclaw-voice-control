@@ -35,7 +35,7 @@ wakeword:
 
 tts:
   engine: macos_say
-  voice: Yue
+  voice: Tingting
   wake_ack: 我在
   followup_beep_enabled: true
   followup_beep_sound: /System/Library/Sounds/Glass.aiff
